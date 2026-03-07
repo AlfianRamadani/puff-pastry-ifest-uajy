@@ -3,7 +3,6 @@ import { Search, Bell, User } from 'lucide-react';
 
 const TopBar = () => {
   return (
-    // The main header container with a thick bottom border
     <header className="w-full bg-white border-b-[3px] border-black px-4 py-3 md:px-6 md:py-4 flex items-center justify-between z-10 font-sans">
       
       {/* =========================================
@@ -36,7 +35,6 @@ const TopBar = () => {
 
         {/* Profile Avatar Container (Peach Background, no shadow in your reference) */}
         <button className="w-10 h-10 bg-[#FFD1B3] border-2 border-black flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity">
-          {/* I'm using a Lucide User icon as a fallback, but you can replace this with an actual <img src="..." /> tag later */}
           <div className="w-6 h-6 bg-white rounded-full border border-black flex items-center justify-center overflow-hidden">
             <User className="w-4 h-4 text-black" strokeWidth={2.5} />
           </div>

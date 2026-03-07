@@ -1,5 +1,3 @@
-import Sidebar from '../components/layouts/sidebar'; // Adjust the path if your Sidebar is elsewhere
-
 export default function TestSidebarPage() {
   return (
     <div className="flex min-h-screen bg-slate-100">
