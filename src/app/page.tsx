@@ -37,7 +37,7 @@ const STEPS = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#FFF9F0]">
+    <div className="min-h-screen bg-[#FFF9F0] scroll-smooth">
       {/* Nav */}
       <nav className="w-full border-b-[3px] border-black bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
@@ -84,7 +84,7 @@ export default function LandingPage() {
                 </Link>
                 <a
                   href="#features"
-                  className="inline-flex items-center gap-2 px-7 py-4 bg-white border-[3px] border-black font-black text-sm text-black uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
+                  className="inline-flex items-center gap-2 px-7 py-4 bg-white border-[3px] border-black font-black text-sm text-black uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all outline-none focus-visible:ring-2 focus-visible:ring-black"
                 >
                   Learn More
                 </a>
@@ -164,8 +164,7 @@ export default function LandingPage() {
             </div>
           </ScrollReveal>
 
-          <ScrollReveal stagger>
-            <div className="space-y-6">
+          <ScrollReveal stagger className="space-y-6">
               {FEATURES.map((feature, i) => (
               <div
                 key={feature.title}
@@ -180,7 +179,6 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
-          </div>
           </ScrollReveal>
         </div>
       </section>
@@ -199,10 +197,9 @@ export default function LandingPage() {
           </div>
           </ScrollReveal>
 
-          <ScrollReveal stagger>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+          <ScrollReveal stagger className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               {STEPS.map((step) => (
-                <div key={step.num} className="relative">
+                <div key={step.num}>
                   <div className={`${step.color} border-[3px] border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200`}>
                     <span className="font-black text-5xl text-black/15 leading-none">{step.num}</span>
                     <h3 className="font-black text-lg text-black uppercase tracking-wide mt-2">{step.title}</h3>
@@ -210,7 +207,6 @@ export default function LandingPage() {
                   </div>
                 </div>
               ))}
-            </div>
           </ScrollReveal>
         </div>
       </section>
@@ -219,7 +215,7 @@ export default function LandingPage() {
       <section className="w-full bg-[#7C5CFC] border-b-[3px] border-black">
         <ScrollReveal>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
-          <div className="inline-block bg-[#FFC107] border-[3px] border-black w-14 h-14 mb-6 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 bg-[#FFC107] border-[3px] border-black mb-6 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center mx-auto">
             <span className="font-black text-2xl text-black">&ldquo;</span>
           </div>
           <p className="font-bold text-xl sm:text-2xl text-white leading-relaxed max-w-2xl mx-auto">
@@ -231,7 +227,7 @@ export default function LandingPage() {
             </div>
             <div className="text-left">
               <p className="font-black text-sm text-white uppercase tracking-wide">Rina Sari</p>
-              <p className="font-bold text-xs text-white/60 uppercase">Computer Science, UAJY</p>
+              <p className="font-bold text-xs text-white/70 uppercase">Computer Science, UAJY</p>
             </div>
           </div>
         </div>
@@ -269,7 +265,7 @@ export default function LandingPage() {
             <span className="font-black text-xs text-black tracking-wide uppercase">Puff Pastry Study Hub</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="font-bold text-xs text-black/50 uppercase tracking-wide">
+            <span className="font-bold text-xs text-black/60 uppercase tracking-wide">
               Built with ❤️ for iFest UAJY
             </span>
           </div>
