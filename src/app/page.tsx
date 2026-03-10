@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { BookOpen, CheckCircle, Clock, Flame, TrendingUp, Calendar, Star, ArrowRight } from "lucide-react";
 
 const STATS = [
@@ -98,9 +99,9 @@ export default function Home() {
             ))}
           </div>
           <div className="px-5 py-3 border-t-2 border-black">
-            <button className="flex items-center gap-1 font-black text-xs text-black uppercase tracking-wide hover:underline">
+            <Link href="/tasks" className="flex items-center gap-1 font-black text-xs text-black uppercase tracking-wide hover:underline outline-none focus-visible:ring-2 focus-visible:ring-black">
               View all tasks <ArrowRight className="w-3 h-3" strokeWidth={3} />
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -133,9 +134,9 @@ export default function Home() {
             ))}
           </div>
           <div className="px-5 py-3 border-t-2 border-black">
-            <button className="flex items-center gap-1 font-black text-xs text-black uppercase tracking-wide hover:underline">
+            <Link href="/tasks" className="flex items-center gap-1 font-black text-xs text-black uppercase tracking-wide hover:underline outline-none focus-visible:ring-2 focus-visible:ring-black">
               View academic load <ArrowRight className="w-3 h-3" strokeWidth={3} />
-            </button>
+            </Link>
           </div>
         </div>
       </div>

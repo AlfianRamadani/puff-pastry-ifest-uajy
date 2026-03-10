@@ -76,7 +76,7 @@ const TopBar = () => {
             <div className="flex items-center gap-2">
               <button
                 aria-label="Notifications"
-                className="relative p-2 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+                className="relative p-2 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all outline-none focus-visible:ring-2 focus-visible:ring-black"
               >
                 <Bell className="w-4 h-4 text-black" strokeWidth={2.5} />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#FF4444] border border-black rounded-full" />

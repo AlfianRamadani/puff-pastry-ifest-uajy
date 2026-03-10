@@ -37,12 +37,12 @@ const Sidebar = () => {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex flex-col items-center justify-center flex-1 border-r-[3px] border-black last:border-r-0 transition-colors ${
+              className={`flex flex-col items-center justify-center flex-1 border-r-[3px] border-black last:border-r-0 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-black ${
                 isActive ? NAV_COLORS[item.name].active : 'bg-white'
               }`}
             >
               <item.icon className="w-5 h-5 text-black mb-0.5" strokeWidth={2.5} />
-              <span className="font-black text-[10px] text-black uppercase tracking-wider">
+              <span className="font-black text-xs text-black uppercase tracking-wider">
                 {item.name}
               </span>
               {isActive && (
@@ -79,7 +79,7 @@ const Sidebar = () => {
                   (item.aliases && item.aliases.some((a) => pathname.startsWith(a)));
 
             return (
-              <Link key={item.name} href={item.href} className="block">
+              <Link key={item.name} href={item.href} className="block outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107]">
                 <div className={`flex items-center gap-3 px-4 py-3 border-[3px] font-black text-sm uppercase tracking-wide transition-all ${
                   isActive
                     ? `${NAV_COLORS[item.name].active} border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black`
