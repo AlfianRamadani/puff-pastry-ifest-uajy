@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { MessageSquare, User, UserPlus, Zap, Send } from "lucide-react";
+import React, { memo } from "react";
+import { MessageSquare, UserPlus, Zap, Send } from "lucide-react";
 import type { Friend } from "./friendsData";
 
 const STATUS_CONFIG = {
@@ -33,7 +33,7 @@ interface FriendCardProps {
 }
 
 // Desktop card
-export const FriendCardDesktop: React.FC<FriendCardProps> = ({ friend }) => {
+export const FriendCardDesktop: React.FC<FriendCardProps> = memo(({ friend }) => {
   const status = STATUS_CONFIG[friend.status];
   const isActive = friend.status !== "offline";
   const avatarColor = AVATAR_COLORS[parseInt(friend.id) % AVATAR_COLORS.length];
@@ -92,10 +92,11 @@ export const FriendCardDesktop: React.FC<FriendCardProps> = ({ friend }) => {
       </div>
     </div>
   );
-};
+});
+FriendCardDesktop.displayName = "FriendCardDesktop";
 
 // Mobile list item
-export const FriendCardMobile: React.FC<FriendCardProps> = ({ friend }) => {
+export const FriendCardMobile: React.FC<FriendCardProps> = memo(({ friend }) => {
   const status = STATUS_CONFIG[friend.status];
   const isActive = friend.status !== "offline";
   const avatarColor = AVATAR_COLORS[parseInt(friend.id) % AVATAR_COLORS.length];
@@ -152,7 +153,8 @@ export const FriendCardMobile: React.FC<FriendCardProps> = ({ friend }) => {
       </div>
     </div>
   );
-};
+});
+FriendCardMobile.displayName = "FriendCardMobile";
 
 // Add new friend placeholder (desktop)
 export const AddFriendCard: React.FC = () => (
