@@ -120,7 +120,7 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
               <button
                 onClick={() => onDelete(course.id)}
                 aria-label={`Delete ${course.name}`}
-                className="p-2 text-black hover:bg-red-100 hover:text-red-600 border-2 border-transparent hover:border-black transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
+                className="p-2.5 text-black hover:bg-red-100 hover:text-red-600 border-2 border-transparent hover:border-black transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
               >
                 <Trash2 className="w-4 h-4" strokeWidth={2.5} />
               </button>
