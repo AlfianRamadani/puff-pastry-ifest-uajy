@@ -9,8 +9,8 @@ const TIMEFRAMES: Timeframe[] = ["Day", "Week", "Month", "Sem"];
 const StudyChart = dynamic(() => import("./StudyChart"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-48 md:h-64 bg-gray-50 border-2 border-dashed border-gray-300 flex items-center justify-center">
-      <span className="font-bold text-sm text-gray-400 uppercase tracking-wide">Loading chart...</span>
+    <div className="w-full h-48 md:h-64 bg-white border-[3px] border-black flex items-center justify-center">
+      <span className="font-black text-sm text-gray-400 uppercase tracking-wide animate-pulse">Loading chart...</span>
     </div>
   ),
 });
@@ -42,7 +42,7 @@ const StudyPatternCard: React.FC = () => {
               key={tf}
               onClick={() => setActiveTimeframe(tf)}
               aria-pressed={activeTimeframe === tf}
-              className={`px-3 md:px-5 py-2.5 md:py-2 font-black text-xs md:text-sm tracking-wide transition-colors border-r-[3px] border-black last:border-r-0 ${
+              className={`px-3 md:px-5 py-2.5 md:py-2 font-black text-xs md:text-sm tracking-wide transition-colors duration-150 border-r-[3px] border-black last:border-r-0 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 ${
                 activeTimeframe === tf
                   ? "bg-[#FFC107] text-black"
                   : "bg-white text-black hover:bg-gray-100"
