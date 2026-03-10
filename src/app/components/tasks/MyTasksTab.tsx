@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { Search, FileText, Trash2, Plus, Timer } from "lucide-react";
 import {
   getTasks,
@@ -68,13 +68,17 @@ export default function MyTasksTab() {
     setShowForm(false);
   }, [newName]);
 
-  const filtered = tasks
-    .filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => {
-      if (sortBy === "DEADLINE") return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      if (sortBy === "PRIORITY") return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
-      return a.name.localeCompare(b.name);
-    });
+  const filtered = useMemo(
+    () =>
+      tasks
+        .filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
+        .sort((a, b) => {
+          if (sortBy === "DEADLINE") return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          if (sortBy === "PRIORITY") return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+          return a.name.localeCompare(b.name);
+        }),
+    [tasks, search, sortBy]
+  );
 
   return (
     <div className="space-y-4">
