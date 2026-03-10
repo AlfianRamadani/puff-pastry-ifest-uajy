@@ -45,35 +45,47 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
             New Course
           </p>
           <div className="flex flex-col gap-3">
-            <input
-              type="text"
-              placeholder="Course name..."
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <select
-                value={form.type}
-                onChange={(e) =>
-                  setForm({ ...form, type: e.target.value as Course["type"] })
-                }
-                className="flex-1 px-3 py-2 border-2 border-black font-black text-xs uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
-              >
-                <option value="THEORY">Theory</option>
-                <option value="PRACTICUM">Practicum</option>
-              </select>
+            <div>
+              <label htmlFor="mobile-course-name" className="sr-only">Course name</label>
               <input
-                type="number"
-                min={1}
-                max={6}
-                value={form.sks}
-                onChange={(e) =>
-                  setForm({ ...form, sks: Number(e.target.value) })
-                }
-                className="w-20 px-3 py-2 border-2 border-black font-black text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
+                id="mobile-course-name"
+                type="text"
+                placeholder="Course name..."
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full px-3 py-2 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
+                autoFocus
               />
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label htmlFor="mobile-course-type" className="sr-only">Course type</label>
+                <select
+                  id="mobile-course-type"
+                  value={form.type}
+                  onChange={(e) =>
+                    setForm({ ...form, type: e.target.value as Course["type"] })
+                  }
+                  className="w-full px-3 py-2 border-2 border-black font-black text-xs uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
+                >
+                  <option value="THEORY">Theory</option>
+                  <option value="PRACTICUM">Practicum</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="mobile-course-sks" className="sr-only">Credit hours (SKS)</label>
+                <input
+                  id="mobile-course-sks"
+                  type="number"
+                  min={1}
+                  max={6}
+                  value={form.sks}
+                  onChange={(e) =>
+                    setForm({ ...form, sks: Number(e.target.value) })
+                  }
+                  className="w-20 px-3 py-2 border-2 border-black font-black text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
+                />
+              </div>
             </div>
             <div className="flex gap-2">
               <button

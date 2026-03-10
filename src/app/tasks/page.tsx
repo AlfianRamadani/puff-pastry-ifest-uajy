@@ -34,7 +34,12 @@ export default function TasksPage() {
       <SubNavTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === "ACADEMIC LOAD" && (
-        <div className="space-y-6">
+        <div
+          role="tabpanel"
+          id="panel-academic-load"
+          aria-labelledby="tab-academic-load"
+          className="space-y-6"
+        >
           <SummaryCards
             totalSKS={getTotalSKS(courses)}
             courseCount={courses.length}
@@ -53,7 +58,12 @@ export default function TasksPage() {
       )}
 
       {activeTab === "MY TASKS" && (
-        <div className="border-[3px] border-dashed border-black bg-white p-12 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div
+          role="tabpanel"
+          id="panel-my-tasks"
+          aria-labelledby="tab-my-tasks"
+          className="border-[3px] border-dashed border-black bg-white p-12 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+        >
           <p className="font-black text-sm uppercase tracking-wide text-gray-400">
             My Tasks — Coming Soon
           </p>
@@ -61,7 +71,12 @@ export default function TasksPage() {
       )}
 
       {activeTab === "BURNOUT ANALYSIS" && (
-        <div className="border-[3px] border-dashed border-black bg-white p-12 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div
+          role="tabpanel"
+          id="panel-burnout-analysis"
+          aria-labelledby="tab-burnout-analysis"
+          className="border-[3px] border-dashed border-black bg-white p-12 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+        >
           <p className="font-black text-sm uppercase tracking-wide text-gray-400">
             Burnout Analysis — Coming Soon
           </p>

@@ -104,7 +104,9 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                   {String(courses.length + 1).padStart(2, "0")}
                 </td>
                 <td className="px-4 py-3">
+                  <label htmlFor="course-name" className="sr-only">Course name</label>
                   <input
+                    id="course-name"
                     type="text"
                     placeholder="Course name..."
                     value={form.name}
@@ -115,7 +117,9 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                   />
                 </td>
                 <td className="px-4 py-3">
+                  <label htmlFor="course-type" className="sr-only">Course type</label>
                   <select
+                    id="course-type"
                     value={form.type}
                     onChange={(e) =>
                       setForm({ ...form, type: e.target.value as Course["type"] })
@@ -127,7 +131,9 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                   </select>
                 </td>
                 <td className="px-4 py-3">
+                  <label htmlFor="course-sks" className="sr-only">Credit hours (SKS)</label>
                   <input
+                    id="course-sks"
                     type="number"
                     min={1}
                     max={6}

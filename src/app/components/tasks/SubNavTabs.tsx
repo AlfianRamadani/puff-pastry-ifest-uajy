@@ -15,7 +15,7 @@ export default function SubNavTabs({ activeTab, onTabChange }: SubNavTabsProps) 
     <div
       role="tablist"
       aria-label="Task sections"
-      className="flex gap-0 border-[3px] border-black bg-white w-fit shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+      className="flex gap-0 border-[3px] border-black bg-white w-fit shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-x-auto max-w-full"
     >
       {TABS.map((tab) => {
         const isActive = tab === activeTab;
@@ -23,7 +23,10 @@ export default function SubNavTabs({ activeTab, onTabChange }: SubNavTabsProps) 
           <button
             key={tab}
             role="tab"
+            id={`tab-${tab.toLowerCase().replace(/\s+/g, "-")}`}
             aria-selected={isActive}
+            aria-controls={`panel-${tab.toLowerCase().replace(/\s+/g, "-")}`}
+            tabIndex={isActive ? 0 : -1}
             onClick={() => onTabChange(tab)}
             className={`relative px-4 py-2.5 font-black text-xs uppercase tracking-wide border-r-[3px] border-black last:border-r-0 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-inset ${
               isActive
