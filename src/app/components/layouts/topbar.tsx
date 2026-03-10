@@ -2,15 +2,17 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { Search, Bell, Sparkles, X, CheckSquare, Users, BookOpen, Clock } from 'lucide-react';
+import { X, CheckSquare, Users, BookOpen, Clock } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Search, Bell, Sparkles, Settings, LogOut, ChevronDown } from 'lucide-react';
 
 const PAGE_TITLES: Record<string, { label: string; color: string }> = {
-  '/': { label: 'DASHBOARD', color: 'bg-[#FFC107]' },
+  '/dashboard': { label: 'DASHBOARD', color: 'bg-[#FFC107]' },
   '/friends': { label: 'FRIENDS', color: 'bg-[#B3D4FF]' },
   '/tasks': { label: 'TASKS', color: 'bg-[#B3FFB3]' },
   '/testing': { label: 'TASKS', color: 'bg-[#B3FFB3]' },
   '/notes': { label: 'NOTES', color: 'bg-[#FFB3C1]' },
+  '/settings': { label: 'SETTINGS', color: 'bg-[#E8D5FF]' },
 };
 
 function getPageInfo(pathname: string) {
@@ -18,7 +20,7 @@ function getPageInfo(pathname: string) {
   for (const [prefix, info] of Object.entries(PAGE_TITLES)) {
     if (prefix !== '/' && pathname.startsWith(prefix)) return info;
   }
-  return PAGE_TITLES['/'];
+  return PAGE_TITLES['/dashboard'];
 }
 
 const NOTIFICATIONS = [
@@ -43,6 +45,7 @@ const SEARCH_ITEMS = [
 
 const TopBar = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const page = getPageInfo(pathname);
 
   const [notifOpen, setNotifOpen] = useState(false);
@@ -259,7 +262,7 @@ const TopBar = () => {
               </div>
               <div className="w-9 h-9 bg-[#FFB3C1] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
                 <span className="font-black text-sm text-black">A</span>
-              </div>
+              </button>
             </div>
           </div>
           {/* Mobile Search */}
