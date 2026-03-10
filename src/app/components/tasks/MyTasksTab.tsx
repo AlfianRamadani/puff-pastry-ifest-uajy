@@ -219,6 +219,13 @@ export default function MyTasksTab() {
 
       {/* Mobile Cards */}
       <div className="md:hidden flex flex-col gap-3">
+        {filtered.length === 0 && (
+          <div className="border-[3px] border-black bg-white p-12 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <p className="font-black text-sm uppercase tracking-wide text-gray-400">
+              {search ? "No tasks match your search" : "No tasks yet"}
+            </p>
+          </div>
+        )}
         {filtered.map((task) => {
           const isDone = task.status === "DONE";
           return (
