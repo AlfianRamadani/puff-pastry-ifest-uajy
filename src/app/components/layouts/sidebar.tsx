@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, CheckSquare, PenLine, ChevronDown, Zap, Settings } from 'lucide-react';
+import { Home, Users, CheckSquare, PenLine, ChevronDown, Zap, Settings, Sparkles } from 'lucide-react';
 
 const NAV_COLORS = {
   HOME: { active: "bg-[#FFC107]", dot: "bg-[#FFC107]" },
@@ -18,6 +18,8 @@ const navItems = [
   { name: 'TASKS' as const, icon: CheckSquare, href: '/tasks', aliases: ['/testing'] },
   { name: 'NOTES' as const, icon: PenLine, href: '/notes' },
 ];
+
+const TOUR_KEY = "puff_pastry_tour_completed";
 
 const Sidebar = () => {
   const pathname = usePathname();
@@ -68,14 +70,17 @@ const Sidebar = () => {
         </div>
 
         {/* Nav Items */}
-        <nav className="flex flex-col gap-2 p-4 flex-1">
+        <nav data-tour="sidebar-nav" className="flex flex-col gap-2 p-4 flex-1">
           {navItems.map((item) => {
+            const tourId =
+              item.name === "TASKS" ? "nav-tasks" :
+              item.name === "FRIENDS" ? "nav-friends" : undefined;
             const isActive =
               pathname.startsWith(item.href) ||
               (item.aliases && item.aliases.some((a) => pathname.startsWith(a)));
 
             return (
-              <Link key={item.name} href={item.href} className="block outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107]">
+              <Link key={item.name} href={item.href} data-tour={tourId} className="block outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107]">
                 <div className={`flex items-center gap-3 px-4 py-3 border-[3px] font-black text-sm uppercase tracking-wide transition-all ${
                   isActive
                     ? `${NAV_COLORS[item.name].active} border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black`
@@ -108,6 +113,16 @@ const Sidebar = () => {
               <Settings className="w-4 h-4 text-black/60 shrink-0" strokeWidth={2.5} />
             </div>
           </Link>
+          <button
+            onClick={() => {
+              localStorage.removeItem(TOUR_KEY);
+              window.location.reload();
+            }}
+            className="flex items-center gap-2 w-full mt-2 px-3 py-2 font-black text-xs uppercase tracking-wide text-black/30 hover:text-black hover:bg-[#FFC107]/20 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-inset"
+          >
+            <Sparkles className="w-3.5 h-3.5" strokeWidth={2.5} />
+            Replay Tour
+          </button>
         </div>
       </div>
     </>

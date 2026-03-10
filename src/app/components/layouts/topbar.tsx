@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
-import { X, CheckSquare, Users, BookOpen, Clock } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, Bell, Sparkles, Settings, LogOut, ChevronDown } from 'lucide-react';
+import Link from 'next/link';
+import { X, CheckSquare, Users, BookOpen, Clock, Search, Bell, Sparkles, Settings, LogOut, ChevronDown } from 'lucide-react';
 
 const PAGE_TITLES: Record<string, { label: string; color: string }> = {
   '/dashboard': { label: 'DASHBOARD', color: 'bg-[#FFC107]' },
@@ -147,7 +146,7 @@ const TopBar = () => {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-3 ml-6">
+        <div data-tour="topbar-actions" className="flex items-center gap-3 ml-6">
           {/* Notification Bell with Dropdown */}
           <div className="relative" ref={notifRef}>
             <button
@@ -260,7 +259,7 @@ const TopBar = () => {
                   </div>
                 )}
               </div>
-              <div className="w-9 h-9 bg-[#FFB3C1] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+              <button className="w-9 h-9 bg-[#FFB3C1] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
                 <span className="font-black text-sm text-black">A</span>
               </button>
             </div>
