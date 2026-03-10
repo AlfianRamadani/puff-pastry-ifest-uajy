@@ -55,40 +55,38 @@ const SEED_METRICS: StudyMetrics = {
   uncompleted: 7,
 };
 
-function seedIfNeeded(): void {
-  if (typeof window === "undefined") return;
-  if (!localStorage.getItem(STORAGE_KEY)) {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ chartData: SEED_DATA, metrics: SEED_METRICS })
-    );
+// In-memory cache to avoid repeated localStorage reads & JSON.parse
+let cachedData: { chartData: Record<Timeframe, StudyDayData[]>; metrics: StudyMetrics } | null = null;
+
+function loadData() {
+  if (cachedData) return cachedData;
+  if (typeof window === "undefined") {
+    return { chartData: SEED_DATA, metrics: SEED_METRICS };
+  }
+
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    const fresh = { chartData: SEED_DATA, metrics: SEED_METRICS };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+    cachedData = fresh;
+    return cachedData;
+  }
+
+  try {
+    cachedData = JSON.parse(raw);
+    return cachedData!;
+  } catch {
+    cachedData = { chartData: SEED_DATA, metrics: SEED_METRICS };
+    return cachedData;
   }
 }
 
 export function getStudyChartData(timeframe: Timeframe): StudyDayData[] {
-  seedIfNeeded();
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed.chartData[timeframe] ?? SEED_DATA[timeframe];
-    }
-  } catch {
-    // fallback to seed
-  }
-  return SEED_DATA[timeframe];
+  const data = loadData();
+  return data.chartData[timeframe] ?? SEED_DATA[timeframe];
 }
 
 export function getStudyMetrics(): StudyMetrics {
-  seedIfNeeded();
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed.metrics ?? SEED_METRICS;
-    }
-  } catch {
-    // fallback to seed
-  }
-  return SEED_METRICS;
+  const data = loadData();
+  return data.metrics ?? SEED_METRICS;
 }

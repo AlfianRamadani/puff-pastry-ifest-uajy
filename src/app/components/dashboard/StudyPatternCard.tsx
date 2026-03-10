@@ -1,19 +1,19 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceDot,
-} from "recharts";
+import dynamic from "next/dynamic";
 import { getStudyChartData, type Timeframe } from "./studyData";
 
 const TIMEFRAMES: Timeframe[] = ["Day", "Week", "Month", "Sem"];
+
+const StudyChart = dynamic(() => import("./StudyChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-48 md:h-64 bg-gray-50 border-2 border-dashed border-gray-300 flex items-center justify-center">
+      <span className="font-bold text-sm text-gray-400 uppercase tracking-wide">Loading chart...</span>
+    </div>
+  ),
+});
 
 const StudyPatternCard: React.FC = () => {
   const [activeTimeframe, setActiveTimeframe] = useState<Timeframe>("Week");
@@ -22,13 +22,6 @@ const StudyPatternCard: React.FC = () => {
     () => getStudyChartData(activeTimeframe),
     [activeTimeframe]
   );
-
-  const peakPoint = useMemo(() => {
-    return chartData.reduce(
-      (max, point) => (point.hours > max.hours ? point : max),
-      chartData[0]
-    );
-  }, [chartData]);
 
   return (
     <section className="bg-white border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 md:p-7">
@@ -61,63 +54,8 @@ const StudyPatternCard: React.FC = () => {
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="w-full h-48 md:h-64" role="img" aria-label={`Study pattern chart showing ${activeTimeframe.toLowerCase()} performance data`}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={chartData}
-            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#E5E7EB"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="day"
-              tick={{ fontSize: 12, fontWeight: 800, fill: "#000" }}
-              axisLine={{ stroke: "#000", strokeWidth: 2 }}
-              tickLine={false}
-            />
-            <YAxis
-              tick={{ fontSize: 12, fontWeight: 800, fill: "#000" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <Tooltip
-              contentStyle={{
-                border: "3px solid #000",
-                background: "#fff",
-                fontWeight: 800,
-                fontSize: 13,
-                boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
-              }}
-              formatter={(value) => [`${value}h`, "Study"]}
-            />
-            <Line
-              type="monotone"
-              dataKey="hours"
-              stroke="#000"
-              strokeWidth={3}
-              dot={{ r: 5, fill: "#fff", stroke: "#000", strokeWidth: 2 }}
-              activeDot={{
-                r: 7,
-                fill: "#FFC107",
-                stroke: "#000",
-                strokeWidth: 2,
-              }}
-            />
-            <ReferenceDot
-              x={peakPoint.day}
-              y={peakPoint.hours}
-              r={8}
-              fill="#FFC107"
-              stroke="#000"
-              strokeWidth={2}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      {/* Chart (dynamically loaded, no SSR) */}
+      <StudyChart data={chartData} timeframeLabel={activeTimeframe} />
     </section>
   );
 };
