@@ -18,7 +18,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
   bgColor,
 }) => (
   <div
-    className={`${bgColor} border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4 md:p-5 flex flex-col gap-3 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all`}
+    className={`${bgColor} border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4 md:p-5 flex flex-col gap-3`}
   >
     <div className="flex items-center gap-2">
       <div className="w-8 h-8 md:w-10 md:h-10 bg-white border-2 border-black flex items-center justify-center rounded-sm">

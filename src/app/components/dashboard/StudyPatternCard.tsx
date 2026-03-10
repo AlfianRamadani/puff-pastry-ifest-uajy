@@ -39,12 +39,17 @@ const StudyPatternCard: React.FC = () => {
         </h2>
 
         {/* Timeframe Segmented Control */}
-        <div className="flex border-[3px] border-black overflow-hidden self-start sm:self-auto">
+        <div
+          role="group"
+          aria-label="Study pattern timeframe"
+          className="flex border-[3px] border-black overflow-hidden self-start sm:self-auto"
+        >
           {TIMEFRAMES.map((tf) => (
             <button
               key={tf}
               onClick={() => setActiveTimeframe(tf)}
-              className={`px-3 md:px-5 py-2 font-black text-xs md:text-sm tracking-wide transition-colors border-r-[3px] border-black last:border-r-0 ${
+              aria-pressed={activeTimeframe === tf}
+              className={`px-3 md:px-5 py-2.5 md:py-2 font-black text-xs md:text-sm tracking-wide transition-colors border-r-[3px] border-black last:border-r-0 ${
                 activeTimeframe === tf
                   ? "bg-[#FFC107] text-black"
                   : "bg-white text-black hover:bg-gray-100"
@@ -57,7 +62,7 @@ const StudyPatternCard: React.FC = () => {
       </div>
 
       {/* Chart */}
-      <div className="w-full h-48 md:h-64">
+      <div className="w-full h-48 md:h-64" role="img" aria-label={`Study pattern chart showing ${activeTimeframe.toLowerCase()} performance data`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={chartData}
