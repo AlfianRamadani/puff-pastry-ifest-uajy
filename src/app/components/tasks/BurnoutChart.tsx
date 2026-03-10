@@ -15,7 +15,7 @@ export default function BurnoutChart({ data }: BurnoutChartProps) {
         <h3 className="font-black text-sm uppercase tracking-wide text-black">
           Burnout Probability
         </h3>
-        <span className="px-2.5 py-0.5 border-2 border-black bg-[#FFC107] font-black text-[10px] uppercase tracking-wide">
+        <span className="px-2.5 py-0.5 border-2 border-black bg-[#FFC107] font-black text-xs uppercase tracking-wide">
           7 Day Trend
         </span>
       </div>

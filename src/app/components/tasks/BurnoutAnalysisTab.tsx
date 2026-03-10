@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Activity, Clock, Flame, FileDown } from "lucide-react";
 import { getBurnoutTrend, getBurnoutMetrics, type BurnoutMetric } from "./burnoutData";
@@ -23,6 +23,32 @@ const RISK_CONFIG: Record<BurnoutMetric["riskLevel"], { bg: string; text: string
 export default function BurnoutAnalysisTab() {
   const trend = getBurnoutTrend();
   const metrics = getBurnoutMetrics();
+
+  const handleGenerateReport = useCallback(() => {
+    const lines = [
+      "BURNOUT ANALYSIS REPORT",
+      `Generated: ${new Date().toLocaleString()}`,
+      "=".repeat(40),
+      "",
+      "7-DAY TREND",
+      ...trend.map((t) => `  ${t.day}: ${t.probability}%`),
+      "",
+      "TASK RISK BREAKDOWN",
+      ...metrics.map((m) => `  [${m.riskLevel}] ${m.taskName} — ${m.contribution}%`),
+      "",
+      `Current Burnout Probability: ${trend[trend.length - 1]?.probability ?? 0}%`,
+      `Critical Tasks: ${metrics.filter((m) => m.riskLevel === "CRITICAL").length}`,
+      `Moderate Tasks: ${metrics.filter((m) => m.riskLevel === "MODERATE").length}`,
+      `Low Risk Tasks: ${metrics.filter((m) => m.riskLevel === "LOW").length}`,
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "burnout-report.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [trend, metrics]);
 
   return (
     <div className="space-y-6">
@@ -99,7 +125,7 @@ export default function BurnoutAnalysisTab() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-[10px] uppercase tracking-wide ${RISK_CONFIG[m.riskLevel].bg} ${RISK_CONFIG[m.riskLevel].text}`}>
+                    <span className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-xs uppercase tracking-wide ${RISK_CONFIG[m.riskLevel].bg} ${RISK_CONFIG[m.riskLevel].text}`}>
                       {m.riskLevel}
                     </span>
                   </td>
@@ -115,7 +141,7 @@ export default function BurnoutAnalysisTab() {
             <div key={m.taskName} className="border-[3px] border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <div className="flex items-start justify-between mb-2">
                 <p className="font-bold text-sm text-black flex-1">{m.taskName}</p>
-                <span className={`inline-block px-2 py-0.5 border-2 border-black font-black text-[10px] uppercase shrink-0 ml-2 ${RISK_CONFIG[m.riskLevel].bg} ${RISK_CONFIG[m.riskLevel].text}`}>
+                <span className={`inline-block px-2 py-0.5 border-2 border-black font-black text-xs uppercase shrink-0 ml-2 ${RISK_CONFIG[m.riskLevel].bg} ${RISK_CONFIG[m.riskLevel].text}`}>
                   {m.riskLevel}
                 </span>
               </div>
@@ -134,7 +160,9 @@ export default function BurnoutAnalysisTab() {
       </div>
 
       {/* Generate Report */}
-      <button className="flex items-center gap-2 px-6 py-3 bg-[#FFC107] border-[3px] border-black font-black text-xs uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2">
+      <button
+        onClick={handleGenerateReport}
+        className="flex items-center gap-2 px-6 py-3 bg-[#FFC107] border-[3px] border-black font-black text-xs uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2">
         <FileDown className="w-4 h-4" strokeWidth={2.5} />
         Generate Report
       </button>

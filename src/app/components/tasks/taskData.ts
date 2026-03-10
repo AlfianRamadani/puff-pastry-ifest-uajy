@@ -39,7 +39,7 @@ function loadTasks(): Task[] {
   return cached;
 }
 
-function saveTasks(tasks: Task[]) {
+export function saveTasks(tasks: Task[]) {
   cached = tasks;
   if (typeof window !== "undefined") {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));

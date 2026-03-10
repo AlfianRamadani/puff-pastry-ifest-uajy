@@ -7,6 +7,7 @@ import {
   addTask,
   deleteTask,
   updateTask,
+  saveTasks,
   formatDueDate,
   type Task,
   type Priority,
@@ -37,6 +38,8 @@ export default function MyTasksTab() {
   const [sortBy, setSortBy] = useState<SortField>("DEADLINE");
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newPriority, setNewPriority] = useState<Priority>("MEDIUM");
+  const [newDueDate, setNewDueDate] = useState("");
 
   useEffect(() => {
     setTasks(getTasks());
@@ -54,19 +57,39 @@ export default function MyTasksTab() {
 
   const handleAddTask = useCallback(() => {
     if (!newName.trim()) return;
-    const due = new Date();
-    due.setDate(due.getDate() + 7);
+    const due = newDueDate || (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      return d.toISOString().split("T")[0];
+    })();
     setTasks(
       addTask({
         name: newName.trim(),
-        priority: "MEDIUM",
+        priority: newPriority,
         status: "NOT STARTED",
-        dueDate: due.toISOString().split("T")[0],
+        dueDate: due,
       })
     );
     setNewName("");
+    setNewPriority("MEDIUM");
+    setNewDueDate("");
     setShowForm(false);
-  }, [newName]);
+  }, [newName, newPriority, newDueDate]);
+
+  const handleEstimateDeadline = useCallback(() => {
+    const now = new Date();
+    setTasks((prev) => {
+      const updated = prev.map((t) => {
+        if (t.status === "DONE") return t;
+        const days = t.priority === "HIGH" ? 3 : t.priority === "MEDIUM" ? 7 : 14;
+        const est = new Date(now);
+        est.setDate(est.getDate() + days);
+        return { ...t, dueDate: est.toISOString().split("T")[0] };
+      });
+      saveTasks(updated);
+      return updated;
+    });
+  }, []);
 
   const filtered = useMemo(
     () =>
@@ -87,7 +110,9 @@ export default function MyTasksTab() {
         <p className="font-bold text-sm text-gray-500">
           {tasks.length} tasks total · {tasks.filter((t) => t.status !== "DONE").length} active
         </p>
-        <button className="flex items-center gap-2 px-4 py-2 bg-[#FFC107] border-[3px] border-black font-black text-xs uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2">
+        <button
+          onClick={handleEstimateDeadline}
+          className="flex items-center gap-2 px-4 py-2 bg-[#FFC107] border-[3px] border-black font-black text-xs uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2">
           <Timer className="w-4 h-4" strokeWidth={2.5} />
           Estimate Deadline
         </button>
@@ -149,7 +174,7 @@ export default function MyTasksTab() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-[10px] uppercase tracking-wide ${PRIORITY_CONFIG[task.priority].bg} ${PRIORITY_CONFIG[task.priority].text}`}>
+                    <span className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-xs uppercase tracking-wide ${PRIORITY_CONFIG[task.priority].bg} ${PRIORITY_CONFIG[task.priority].text}`}>
                       {task.priority}
                     </span>
                   </td>
@@ -157,7 +182,7 @@ export default function MyTasksTab() {
                     <button
                       onClick={() => handleStatusToggle(task.id, task.status)}
                       aria-label={`Mark ${task.name} as ${task.status === "DONE" ? "not started" : "done"}`}
-                      className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-[10px] uppercase tracking-wide cursor-pointer transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
+                      className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-xs uppercase tracking-wide cursor-pointer transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
                     >
                       {task.status}
                     </button>
@@ -188,7 +213,7 @@ export default function MyTasksTab() {
         )}
 
         {showForm ? (
-          <div className="flex items-center gap-3 px-4 py-3 border-t-2 border-black bg-[#FFC107]/10">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-t-2 border-black bg-[#FFC107]/10">
             <label htmlFor="new-task-name" className="sr-only">New task name</label>
             <input
               id="new-task-name"
@@ -197,22 +222,41 @@ export default function MyTasksTab() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
-              className="flex-1 px-3 py-1.5 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
+              className="flex-1 min-w-[120px] px-3 py-1.5 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
               autoFocus
+            />
+            <label htmlFor="new-task-priority" className="sr-only">Priority</label>
+            <select
+              id="new-task-priority"
+              value={newPriority}
+              onChange={(e) => setNewPriority(e.target.value as Priority)}
+              className="px-3 py-1.5 border-2 border-black font-black text-xs uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
+            >
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+            <label htmlFor="new-task-due" className="sr-only">Due date</label>
+            <input
+              id="new-task-due"
+              type="date"
+              value={newDueDate}
+              onChange={(e) => setNewDueDate(e.target.value)}
+              className="px-3 py-1.5 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
             />
             <button onClick={handleAddTask} className="px-3 py-1.5 bg-[#FFC107] border-2 border-black font-black text-xs transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] outline-none focus-visible:ring-2 focus-visible:ring-black">
               Save
             </button>
-            <button onClick={() => { setShowForm(false); setNewName(""); }} className="px-3 py-1.5 bg-white border-2 border-black font-black text-xs transition-colors duration-150 hover:bg-gray-100 outline-none focus-visible:ring-2 focus-visible:ring-black">
+            <button onClick={() => { setShowForm(false); setNewName(""); setNewPriority("MEDIUM"); setNewDueDate(""); }} className="px-3 py-1.5 bg-white border-2 border-black font-black text-xs transition-colors duration-150 hover:bg-gray-100 outline-none focus-visible:ring-2 focus-visible:ring-black">
               Cancel
             </button>
           </div>
         ) : (
           <button
             onClick={() => setShowForm(true)}
-            className="w-full py-3 text-center font-black text-xs uppercase tracking-wide text-gray-400 hover:text-black hover:bg-gray-50 border-t-2 border-black transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-inset"
+            className="w-full py-3 text-center font-black text-xs uppercase tracking-wide text-gray-500 hover:text-black hover:bg-gray-50 border-t-2 border-black transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-inset"
           >
-            + New Page
+            + New Task
           </button>
         )}
       </div>
@@ -232,13 +276,13 @@ export default function MyTasksTab() {
             <div key={task.id} className="border-[3px] border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex gap-2">
-                  <span className={`inline-block px-2 py-0.5 border-2 border-black font-black text-[10px] uppercase ${PRIORITY_CONFIG[task.priority].bg}`}>
+                  <span className={`inline-block px-2 py-0.5 border-2 border-black font-black text-xs uppercase ${PRIORITY_CONFIG[task.priority].bg}`}>
                     {task.priority}
                   </span>
                   <button
                     onClick={() => handleStatusToggle(task.id, task.status)}
                     aria-label={`Mark ${task.name} as ${task.status === "DONE" ? "not started" : "done"}`}
-                    className={`inline-block px-2 py-0.5 border-2 border-black font-black text-[10px] uppercase cursor-pointer transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
+                    className={`inline-block px-2 py-0.5 border-2 border-black font-black text-xs uppercase cursor-pointer transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
                   >
                     {task.status}
                   </button>
@@ -274,11 +318,36 @@ export default function MyTasksTab() {
               className="w-full px-3 py-2 border-2 border-black font-bold text-sm mb-3 outline-none focus:ring-2 focus:ring-[#FFC107]"
               autoFocus
             />
+            <div className="flex gap-3 mb-3">
+              <div className="flex-1">
+                <label htmlFor="mobile-new-priority" className="font-black text-xs uppercase tracking-wide block mb-1">Priority</label>
+                <select
+                  id="mobile-new-priority"
+                  value={newPriority}
+                  onChange={(e) => setNewPriority(e.target.value as Priority)}
+                  className="w-full px-3 py-2 border-2 border-black font-black text-xs uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
+                >
+                  <option value="HIGH">High</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="LOW">Low</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label htmlFor="mobile-new-due" className="font-black text-xs uppercase tracking-wide block mb-1">Due Date</label>
+                <input
+                  id="mobile-new-due"
+                  type="date"
+                  value={newDueDate}
+                  onChange={(e) => setNewDueDate(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
+                />
+              </div>
+            </div>
             <div className="flex gap-2">
               <button onClick={handleAddTask} className="flex-1 py-2 bg-[#FFC107] border-2 border-black font-black text-xs uppercase transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] outline-none focus-visible:ring-2 focus-visible:ring-black">
                 Save
               </button>
-              <button onClick={() => { setShowForm(false); setNewName(""); }} className="flex-1 py-2 bg-white border-2 border-black font-black text-xs uppercase transition-colors duration-150 hover:bg-gray-100 outline-none focus-visible:ring-2 focus-visible:ring-black">
+              <button onClick={() => { setShowForm(false); setNewName(""); setNewPriority("MEDIUM"); setNewDueDate(""); }} className="flex-1 py-2 bg-white border-2 border-black font-black text-xs uppercase transition-colors duration-150 hover:bg-gray-100 outline-none focus-visible:ring-2 focus-visible:ring-black">
                 Cancel
               </button>
             </div>
@@ -286,10 +355,10 @@ export default function MyTasksTab() {
         ) : (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center justify-center gap-2 py-3 border-[3px] border-dashed border-black font-black text-xs uppercase tracking-wide text-gray-400 hover:text-black hover:bg-gray-50 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
+            className="flex items-center justify-center gap-2 py-3 border-[3px] border-dashed border-black font-black text-xs uppercase tracking-wide text-gray-500 hover:text-black hover:bg-gray-50 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
           >
             <Plus className="w-4 h-4" strokeWidth={2.5} />
-            New Page
+            New Task
           </button>
         )}
       </div>
