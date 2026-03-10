@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Zap, BookOpen, Users, BarChart3, CheckCircle, ArrowRight, Clock, Flame } from "lucide-react";
+import { Zap, BookOpen, Users, BarChart3, CheckCircle, ArrowRight, Flame } from "lucide-react";
+import ScrollReveal from "@/app/components/landing/ScrollReveal";
 
 const FEATURES = [
   {
@@ -29,8 +30,8 @@ const STATS = [
 ];
 
 const STEPS = [
-  { num: "01", title: "Sign Up", desc: "Create your account in seconds", color: "bg-[#FFC107]" },
-  { num: "02", title: "Add Courses", desc: "Import your class schedule", color: "bg-[#B3D4FF]" },
+  { num: "01", title: "Open the App", desc: "No sign-up needed, just jump in", color: "bg-[#FFC107]" },
+  { num: "02", title: "Add Courses", desc: "Set up your class schedule", color: "bg-[#B3D4FF]" },
   { num: "03", title: "Start Studying", desc: "Track, collaborate, and grow", color: "bg-[#B3FFB3]" },
 ];
 
@@ -60,25 +61,25 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24 lg:py-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div>
-              <div className="inline-block bg-[#B3FFB3] border-[3px] border-black px-4 py-1.5 mb-6 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+              <div className="inline-block bg-[#B3FFB3] border-[3px] border-black px-4 py-1.5 mb-6 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hero-badge">
                 <span className="font-black text-xs text-black uppercase tracking-widest">
                   🎓 Built for Students
                 </span>
               </div>
-              <h1 className="font-black text-4xl sm:text-5xl lg:text-6xl text-black uppercase leading-[0.95] tracking-tight">
+              <h1 className="font-black text-4xl sm:text-5xl lg:text-6xl text-black uppercase leading-[0.95] tracking-tight hero-headline">
                 Study Hard,<br />
                 <span className="text-[#7C5CFC]">Burn Out</span><br />
                 Never.
               </h1>
-              <p className="font-bold text-base sm:text-lg text-black/70 mt-6 max-w-lg leading-relaxed">
+              <p className="font-bold text-base sm:text-lg text-black/70 mt-6 max-w-lg leading-relaxed hero-desc">
                 The study hub that tracks your progress, keeps you accountable with friends, and makes sure you don&apos;t crash before finals.
               </p>
-              <div className="flex flex-wrap gap-3 mt-8">
+              <div className="flex flex-wrap gap-3 mt-8 hero-cta">
                 <Link
                   href="/dashboard"
                   className="inline-flex items-center gap-2 px-7 py-4 bg-[#FFC107] border-[3px] border-black font-black text-sm text-black uppercase tracking-wide shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all"
                 >
-                  Get Started Free
+                  Start Studying
                   <ArrowRight className="w-4 h-4" strokeWidth={3} />
                 </Link>
                 <a
@@ -91,7 +92,7 @@ export default function LandingPage() {
             </div>
 
             {/* Visual — stacked blocks representing the app */}
-            <div className="hidden lg:block relative">
+            <div className="hidden lg:block relative hero-visual">
               <div className="relative w-full aspect-square max-w-md ml-auto">
                 {/* Background decorative block */}
                 <div className="absolute top-4 left-4 right-0 bottom-0 bg-[#FFC107] border-[3px] border-black" />
@@ -122,10 +123,10 @@ export default function LandingPage() {
                   </div>
                 </div>
                 {/* Floating elements */}
-                <div className="absolute -top-4 -right-4 w-14 h-14 bg-[#FFB3C1] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rotate-6">
+                <div className="absolute -top-4 -right-4 w-14 h-14 bg-[#FFB3C1] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rotate-6 animate-float" style={{ "--float-rotate": "6deg" } as React.CSSProperties}>
                   <Flame className="w-7 h-7 text-black" strokeWidth={2.5} />
                 </div>
-                <div className="absolute -bottom-3 -left-3 w-12 h-12 bg-[#B3FFB3] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -rotate-6">
+                <div className="absolute -bottom-3 -left-3 w-12 h-12 bg-[#B3FFB3] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -rotate-6 animate-float-delayed" style={{ "--float-rotate": "-6deg" } as React.CSSProperties}>
                   <CheckCircle className="w-6 h-6 text-black" strokeWidth={2.5} />
                 </div>
               </div>
@@ -152,20 +153,23 @@ export default function LandingPage() {
       {/* Features */}
       <section id="features" className="w-full bg-[#FFF9F0] border-b-[3px] border-black">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-          <div className="mb-12">
-            <div className="inline-block bg-[#FFC107] border-[3px] border-black px-4 py-1.5 mb-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-              <span className="font-black text-xs text-black uppercase tracking-widest">Features</span>
+          <ScrollReveal>
+            <div className="mb-12">
+              <div className="inline-block bg-[#FFC107] border-[3px] border-black px-4 py-1.5 mb-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                <span className="font-black text-xs text-black uppercase tracking-widest">Features</span>
+              </div>
+              <h2 className="font-black text-3xl sm:text-4xl text-black uppercase tracking-tight">
+                Everything You Need<br />to Ace Your Semester
+              </h2>
             </div>
-            <h2 className="font-black text-3xl sm:text-4xl text-black uppercase tracking-tight">
-              Everything You Need<br />to Ace Your Semester
-            </h2>
-          </div>
+          </ScrollReveal>
 
-          <div className="space-y-6">
-            {FEATURES.map((feature, i) => (
+          <ScrollReveal stagger>
+            <div className="space-y-6">
+              {FEATURES.map((feature, i) => (
               <div
                 key={feature.title}
-                className={`${feature.color} border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 flex flex-col sm:flex-row items-start gap-5 ${i % 2 === 1 ? "sm:flex-row-reverse sm:text-right" : ""}`}
+                className={`${feature.color} border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 flex flex-col sm:flex-row items-start gap-5 hover:-translate-y-1 hover:shadow-[6px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 ${i % 2 === 1 ? "sm:flex-row-reverse sm:text-right" : ""}`}
               >
                 <div className="w-14 h-14 bg-white border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] shrink-0">
                   <feature.icon className="w-7 h-7 text-black" strokeWidth={2.5} />
@@ -177,37 +181,43 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* How It Works */}
       <section className="w-full bg-white border-b-[3px] border-black">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-          <div className="mb-12">
-            <div className="inline-block bg-[#B3D4FF] border-[3px] border-black px-4 py-1.5 mb-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-              <span className="font-black text-xs text-black uppercase tracking-widest">How It Works</span>
-            </div>
-            <h2 className="font-black text-3xl sm:text-4xl text-black uppercase tracking-tight">
-              Three Steps to<br />Better Grades
+          <ScrollReveal>
+            <div className="mb-12">
+              <div className="inline-block bg-[#B3D4FF] border-[3px] border-black px-4 py-1.5 mb-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                <span className="font-black text-xs text-black uppercase tracking-widest">How It Works</span>
+              </div>
+              <h2 className="font-black text-3xl sm:text-4xl text-black uppercase tracking-tight">
+                Three Steps to<br />Better Grades
             </h2>
           </div>
+          </ScrollReveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            {STEPS.map((step) => (
-              <div key={step.num} className="relative">
-                <div className={`${step.color} border-[3px] border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]`}>
-                  <span className="font-black text-5xl text-black/15 leading-none">{step.num}</span>
-                  <h3 className="font-black text-lg text-black uppercase tracking-wide mt-2">{step.title}</h3>
-                  <p className="font-bold text-sm text-black/70 mt-1">{step.desc}</p>
+          <ScrollReveal stagger>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+              {STEPS.map((step) => (
+                <div key={step.num} className="relative">
+                  <div className={`${step.color} border-[3px] border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200`}>
+                    <span className="font-black text-5xl text-black/15 leading-none">{step.num}</span>
+                    <h3 className="font-black text-lg text-black uppercase tracking-wide mt-2">{step.title}</h3>
+                    <p className="font-bold text-sm text-black/70 mt-1">{step.desc}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* Testimonial */}
       <section className="w-full bg-[#7C5CFC] border-b-[3px] border-black">
+        <ScrollReveal>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
           <div className="inline-block bg-[#FFC107] border-[3px] border-black w-14 h-14 mb-6 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center mx-auto">
             <span className="font-black text-2xl text-black">&ldquo;</span>
@@ -225,25 +235,28 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+        </ScrollReveal>
       </section>
 
       {/* Final CTA */}
       <section className="w-full bg-[#FFC107] border-b-[3px] border-black">
+        <ScrollReveal>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
           <h2 className="font-black text-3xl sm:text-4xl lg:text-5xl text-black uppercase tracking-tight">
             Ready to Study<br />Smarter?
           </h2>
           <p className="font-bold text-base text-black/70 mt-4 max-w-md mx-auto">
-            Join students who study better, stress less, and actually enjoy the process.
+            No sign-up required. Just open and start studying smarter.
           </p>
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-2 mt-8 px-8 py-5 bg-black border-[3px] border-black font-black text-sm text-white uppercase tracking-wide shadow-[6px_6px_0px_0px_rgba(124,92,252,1)] hover:shadow-[3px_3px_0px_0px_rgba(124,92,252,1)] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all"
           >
-            Get Started — It&apos;s Free
+            Open Dashboard
             <ArrowRight className="w-4 h-4" strokeWidth={3} />
           </Link>
         </div>
+        </ScrollReveal>
       </section>
 
       {/* Footer */}
