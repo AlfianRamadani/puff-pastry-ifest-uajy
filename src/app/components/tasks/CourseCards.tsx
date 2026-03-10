@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Trash2, Plus } from "lucide-react";
 import type { Course } from "./courseData";
+import { useCourseForm } from "./useCourseForm";
 
 interface CourseCardsProps {
   courses: Course[];
@@ -10,18 +11,9 @@ interface CourseCardsProps {
   onAdd: (course: Omit<Course, "id">) => void;
 }
 
-const EMPTY_FORM = { name: "", type: "THEORY" as Course["type"], sks: 3 };
-
 export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsProps) {
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-
-  const handleSubmit = () => {
-    if (!form.name.trim()) return;
-    onAdd({ name: form.name.trim(), type: form.type, sks: form.sks });
-    setForm(EMPTY_FORM);
-    setShowForm(false);
-  };
+  const { showForm, form, openForm, closeForm, handleSubmit, updateField } =
+    useCourseForm(onAdd);
 
   return (
     <div className="md:hidden">
@@ -30,7 +22,7 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
           Course List
         </h2>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={openForm}
           className="flex items-center gap-1.5 px-3 py-2 bg-[#FFC107] border-[3px] border-black font-black text-xs uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
         >
           <Plus className="w-4 h-4" strokeWidth={2.5} />
@@ -38,7 +30,6 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
         </button>
       </div>
 
-      {/* Add form modal */}
       {showForm && (
         <div className="mb-4 border-[3px] border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <p className="font-black text-xs uppercase tracking-wide mb-3 text-black">
@@ -52,7 +43,7 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
                 type="text"
                 placeholder="Course name..."
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onChange={(e) => updateField("name", e.target.value)}
                 className="w-full px-3 py-2 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
                 autoFocus
               />
@@ -64,7 +55,7 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
                   id="mobile-course-type"
                   value={form.type}
                   onChange={(e) =>
-                    setForm({ ...form, type: e.target.value as Course["type"] })
+                    updateField("type", e.target.value as Course["type"])
                   }
                   className="w-full px-3 py-2 border-2 border-black font-black text-xs uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
                 >
@@ -80,9 +71,7 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
                   min={1}
                   max={6}
                   value={form.sks}
-                  onChange={(e) =>
-                    setForm({ ...form, sks: Number(e.target.value) })
-                  }
+                  onChange={(e) => updateField("sks", Number(e.target.value))}
                   className="w-20 px-3 py-2 border-2 border-black font-black text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
                 />
               </div>
@@ -95,10 +84,7 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
                 Save
               </button>
               <button
-                onClick={() => {
-                  setShowForm(false);
-                  setForm(EMPTY_FORM);
-                }}
+                onClick={closeForm}
                 className="flex-1 py-2 bg-white border-2 border-black font-black text-xs uppercase hover:bg-gray-100 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
               >
                 Cancel

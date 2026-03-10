@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Trash2, Plus } from "lucide-react";
 import type { Course } from "./courseData";
+import { useCourseForm } from "./useCourseForm";
 
 interface CourseTableProps {
   courses: Course[];
@@ -10,18 +11,9 @@ interface CourseTableProps {
   onAdd: (course: Omit<Course, "id">) => void;
 }
 
-const EMPTY_FORM = { name: "", type: "THEORY" as Course["type"], sks: 3 };
-
 export default function CourseTable({ courses, onDelete, onAdd }: CourseTableProps) {
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-
-  const handleSubmit = () => {
-    if (!form.name.trim()) return;
-    onAdd({ name: form.name.trim(), type: form.type, sks: form.sks });
-    setForm(EMPTY_FORM);
-    setShowForm(false);
-  };
+  const { showForm, form, openForm, closeForm, handleSubmit, updateField } =
+    useCourseForm(onAdd);
 
   return (
     <div className="hidden md:block">
@@ -30,7 +22,7 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
           Course List
         </h2>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={openForm}
           className="flex items-center gap-2 px-4 py-2 bg-[#FFC107] border-[3px] border-black font-black text-xs uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
         >
           <Plus className="w-4 h-4" strokeWidth={2.5} />
@@ -110,7 +102,7 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                     type="text"
                     placeholder="Course name..."
                     value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    onChange={(e) => updateField("name", e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                     className="w-full px-3 py-1.5 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
                     autoFocus
@@ -122,7 +114,7 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                     id="course-type"
                     value={form.type}
                     onChange={(e) =>
-                      setForm({ ...form, type: e.target.value as Course["type"] })
+                      updateField("type", e.target.value as Course["type"])
                     }
                     className="px-3 py-1.5 border-2 border-black font-black text-[10px] uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
                   >
@@ -139,7 +131,7 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                     max={6}
                     value={form.sks}
                     onChange={(e) =>
-                      setForm({ ...form, sks: Number(e.target.value) })
+                      updateField("sks", Number(e.target.value))
                     }
                     className="w-16 px-3 py-1.5 border-2 border-black font-black text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
                   />
@@ -152,10 +144,7 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                     Save
                   </button>
                   <button
-                    onClick={() => {
-                      setShowForm(false);
-                      setForm(EMPTY_FORM);
-                    }}
+                    onClick={closeForm}
                     className="px-3 py-1.5 bg-white border-2 border-black font-black text-xs hover:bg-gray-100 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
                   >
                     Cancel
@@ -169,7 +158,7 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
         {/* Add Another Row link */}
         {!showForm && (
           <button
-            onClick={() => setShowForm(true)}
+            onClick={openForm}
             className="w-full py-3 text-center font-black text-xs uppercase tracking-wide text-gray-400 hover:text-black hover:bg-gray-50 border-t-2 border-black transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-inset"
           >
             + Add Another Row
