@@ -28,7 +28,7 @@ export default function Home() {
   const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6">
       {/* Hero Greeting */}
       <div className="bg-[#FFC107] border-[3px] border-black p-6 sm:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
