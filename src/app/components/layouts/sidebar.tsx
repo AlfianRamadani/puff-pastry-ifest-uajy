@@ -13,7 +13,7 @@ const NAV_COLORS = {
 } as const;
 
 const navItems = [
-  { name: 'HOME' as const, icon: Home, href: '/' },
+  { name: 'HOME' as const, icon: Home, href: '/dashboard' },
   { name: 'FRIENDS' as const, icon: Users, href: '/friends' },
   { name: 'TASKS' as const, icon: CheckSquare, href: '/tasks', aliases: ['/testing'] },
   { name: 'NOTES' as const, icon: PenLine, href: '/notes' },
@@ -28,10 +28,8 @@ const Sidebar = () => {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 w-full flex z-50 h-18 bg-white border-t-[3px] border-black">
         {navItems.map((item) => {
           const isActive =
-            item.href === '/'
-              ? pathname === '/'
-              : pathname.startsWith(item.href) ||
-                (item.aliases && item.aliases.some((a) => pathname.startsWith(a)));
+            pathname.startsWith(item.href) ||
+            (item.aliases && item.aliases.some((a) => pathname.startsWith(a)));
 
           return (
             <Link
@@ -73,10 +71,8 @@ const Sidebar = () => {
         <nav className="flex flex-col gap-2 p-4 flex-1">
           {navItems.map((item) => {
             const isActive =
-              item.href === '/'
-                ? pathname === '/'
-                : pathname.startsWith(item.href) ||
-                  (item.aliases && item.aliases.some((a) => pathname.startsWith(a)));
+              pathname.startsWith(item.href) ||
+              (item.aliases && item.aliases.some((a) => pathname.startsWith(a)));
 
             return (
               <Link key={item.name} href={item.href} className="block outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107]">

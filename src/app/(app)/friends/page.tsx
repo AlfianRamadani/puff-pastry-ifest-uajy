@@ -1,5 +1,5 @@
-import StartStudySession from "../components/friends/StartStudySession";
-import FriendsList from "../components/friends/FriendsList";
+import StartStudySession from "@/app/components/friends/StartStudySession";
+import FriendsList from "@/app/components/friends/FriendsList";
 
 export default function FriendsPage() {
   return (

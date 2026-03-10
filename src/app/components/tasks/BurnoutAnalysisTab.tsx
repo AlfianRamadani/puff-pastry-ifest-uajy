@@ -33,7 +33,7 @@ export default function BurnoutAnalysisTab() {
       "7-DAY TREND",
       ...trend.map((t) => `  ${t.day}: ${t.probability}%`),
       "",
-      "TASK RISK BREAKDOWN",
+      "WORKLOAD IMPACT BREAKDOWN",
       ...metrics.map((m) => `  [${m.riskLevel}] ${m.taskName} — ${m.contribution}%`),
       "",
       `Current Burnout Probability: ${trend[trend.length - 1]?.probability ?? 0}%`,
@@ -54,7 +54,7 @@ export default function BurnoutAnalysisTab() {
     <div className="space-y-6">
       {/* Subtitle */}
       <p className="font-bold text-sm text-gray-500">
-        Real-time detector for academic mental fatigue and task congestion.
+        Monitor your workload and catch burnout before it hits.
       </p>
 
       {/* KPI Cards */}
@@ -62,7 +62,7 @@ export default function BurnoutAnalysisTab() {
         <div className="border-[3px] border-black bg-[#FFC107] p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
           <div className="flex items-center gap-2 mb-3">
             <Activity className="w-5 h-5 text-black" strokeWidth={2.5} />
-            <span className="font-black text-xs uppercase tracking-wide text-black">Task Density</span>
+            <span className="font-black text-xs uppercase tracking-wide text-black">Active Tasks</span>
           </div>
           <p className="font-black text-4xl text-black">
             18 <span className="text-lg">Active</span>
@@ -72,10 +72,10 @@ export default function BurnoutAnalysisTab() {
         <div className="border-[3px] border-black bg-white p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <div className="flex items-center gap-2 mb-3">
             <Clock className="w-5 h-5 text-black" strokeWidth={2.5} />
-            <span className="font-black text-xs uppercase tracking-wide text-black">Deadline Proximity</span>
+            <span className="font-black text-xs uppercase tracking-wide text-black">Upcoming Deadlines</span>
           </div>
           <p className="font-black text-4xl text-black">
-            HIGH <span className="text-lg">Cluster</span>
+            HIGH <span className="text-lg">Many Due Soon</span>
           </p>
         </div>
 
@@ -105,7 +105,7 @@ export default function BurnoutAnalysisTab() {
             <thead>
               <tr className="border-b-[3px] border-black bg-gray-50">
                 <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black">Task Name</th>
-                <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-64">Metric Contribution</th>
+                <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-64">Workload Impact</th>
                 <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-28">Risk Level</th>
               </tr>
             </thead>
@@ -115,7 +115,7 @@ export default function BurnoutAnalysisTab() {
                   <td className="px-4 py-3 font-bold text-sm text-black">{m.taskName}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 h-4 border-2 border-black bg-gray-100 overflow-hidden" role="progressbar" aria-valuenow={m.contribution} aria-valuemin={0} aria-valuemax={100} aria-label={`${m.taskName} metric contribution`}>
+                      <div className="flex-1 h-4 border-2 border-black bg-gray-100 overflow-hidden" role="progressbar" aria-valuenow={m.contribution} aria-valuemin={0} aria-valuemax={100} aria-label={`${m.taskName} workload impact`}>
                         <div
                           className={`h-full ${RISK_CONFIG[m.riskLevel].barColor} transition-all duration-300`}
                           style={{ width: `${m.contribution}%` }}
@@ -146,7 +146,7 @@ export default function BurnoutAnalysisTab() {
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-3 border-2 border-black bg-gray-100 overflow-hidden" role="progressbar" aria-valuenow={m.contribution} aria-valuemin={0} aria-valuemax={100} aria-label={`${m.taskName} metric contribution`}>
+                <div className="flex-1 h-3 border-2 border-black bg-gray-100 overflow-hidden" role="progressbar" aria-valuenow={m.contribution} aria-valuemin={0} aria-valuemax={100} aria-label={`${m.taskName} workload impact`}>
                   <div
                     className={`h-full ${RISK_CONFIG[m.riskLevel].barColor}`}
                     style={{ width: `${m.contribution}%` }}

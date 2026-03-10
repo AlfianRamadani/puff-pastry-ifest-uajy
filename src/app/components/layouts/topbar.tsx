@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Search, Bell, Sparkles, Settings, LogOut, ChevronDown } from 'lucide-react';
 
 const PAGE_TITLES: Record<string, { label: string; color: string }> = {
-  '/': { label: 'DASHBOARD', color: 'bg-[#FFC107]' },
+  '/dashboard': { label: 'DASHBOARD', color: 'bg-[#FFC107]' },
   '/friends': { label: 'FRIENDS', color: 'bg-[#B3D4FF]' },
   '/tasks': { label: 'TASKS', color: 'bg-[#B3FFB3]' },
   '/testing': { label: 'TASKS', color: 'bg-[#B3FFB3]' },
@@ -19,7 +19,7 @@ function getPageInfo(pathname: string) {
   for (const [prefix, info] of Object.entries(PAGE_TITLES)) {
     if (prefix !== '/' && pathname.startsWith(prefix)) return info;
   }
-  return PAGE_TITLES['/'];
+  return PAGE_TITLES['/dashboard'];
 }
 
 const TopBar = () => {
@@ -66,7 +66,7 @@ const TopBar = () => {
             <input
               id="topbar-search"
               type="text"
-              placeholder="Search anything..."
+              placeholder="Search tasks, courses, friends..."
               className="bg-transparent outline-none w-full font-bold text-sm text-black placeholder:text-black/30 tracking-wide"
             />
           </div>

@@ -1,19 +1,19 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import SubNavTabs, { type TabName } from "../components/tasks/SubNavTabs";
-import SummaryCards from "../components/tasks/SummaryCards";
-import CourseTable from "../components/tasks/CourseTable";
-import CourseCards from "../components/tasks/CourseCards";
-import MyTasksTab from "../components/tasks/MyTasksTab";
-import BurnoutAnalysisTab from "../components/tasks/BurnoutAnalysisTab";
+import SubNavTabs, { type TabName } from "@/app/components/tasks/SubNavTabs";
+import SummaryCards from "@/app/components/tasks/SummaryCards";
+import CourseTable from "@/app/components/tasks/CourseTable";
+import CourseCards from "@/app/components/tasks/CourseCards";
+import MyTasksTab from "@/app/components/tasks/MyTasksTab";
+import BurnoutAnalysisTab from "@/app/components/tasks/BurnoutAnalysisTab";
 import {
   getCourses,
   addCourse,
   deleteCourse,
   getTotalSKS,
   type Course,
-} from "../components/tasks/courseData";
+} from "@/app/components/tasks/courseData";
 
 export default function TasksPage() {
   const [activeTab, setActiveTab] = useState<TabName>("MY TASKS");
