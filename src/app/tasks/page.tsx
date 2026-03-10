@@ -5,6 +5,8 @@ import SubNavTabs, { type TabName } from "../components/tasks/SubNavTabs";
 import SummaryCards from "../components/tasks/SummaryCards";
 import CourseTable from "../components/tasks/CourseTable";
 import CourseCards from "../components/tasks/CourseCards";
+import MyTasksTab from "../components/tasks/MyTasksTab";
+import BurnoutAnalysisTab from "../components/tasks/BurnoutAnalysisTab";
 import {
   getCourses,
   addCourse,
@@ -14,7 +16,7 @@ import {
 } from "../components/tasks/courseData";
 
 export default function TasksPage() {
-  const [activeTab, setActiveTab] = useState<TabName>("ACADEMIC LOAD");
+  const [activeTab, setActiveTab] = useState<TabName>("MY TASKS");
   const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
@@ -32,6 +34,16 @@ export default function TasksPage() {
   return (
     <section className="space-y-6">
       <SubNavTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {activeTab === "MY TASKS" && (
+        <div
+          role="tabpanel"
+          id="panel-my-tasks"
+          aria-labelledby="tab-my-tasks"
+        >
+          <MyTasksTab />
+        </div>
+      )}
 
       {activeTab === "ACADEMIC LOAD" && (
         <div
@@ -57,29 +69,13 @@ export default function TasksPage() {
         </div>
       )}
 
-      {activeTab === "MY TASKS" && (
-        <div
-          role="tabpanel"
-          id="panel-my-tasks"
-          aria-labelledby="tab-my-tasks"
-          className="border-[3px] border-dashed border-black bg-white p-12 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-        >
-          <p className="font-black text-sm uppercase tracking-wide text-gray-400">
-            My Tasks — Coming Soon
-          </p>
-        </div>
-      )}
-
       {activeTab === "BURNOUT ANALYSIS" && (
         <div
           role="tabpanel"
           id="panel-burnout-analysis"
           aria-labelledby="tab-burnout-analysis"
-          className="border-[3px] border-dashed border-black bg-white p-12 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
         >
-          <p className="font-black text-sm uppercase tracking-wide text-gray-400">
-            Burnout Analysis — Coming Soon
-          </p>
+          <BurnoutAnalysisTab />
         </div>
       )}
     </section>
