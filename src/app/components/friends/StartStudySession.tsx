@@ -99,7 +99,7 @@ const StartStudySession: React.FC = () => {
       <section className="bg-[#FFC107] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 md:p-7">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-black border-2 border-black flex items-center justify-center animate-pulse">
+            <div className="w-10 h-10 bg-black border-2 border-black flex items-center justify-center">
               <Zap className="w-5 h-5 text-[#FFC107]" strokeWidth={3} />
             </div>
             <div>
@@ -119,21 +119,23 @@ const StartStudySession: React.FC = () => {
         </div>
 
         {/* Timer */}
-        <div className="bg-white border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4 mb-4 flex items-center justify-between">
+        <div className="bg-white border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Clock className="w-5 h-5 text-black" strokeWidth={2.5} />
             <span className="font-black text-2xl md:text-3xl text-black tracking-widest font-mono">
               {formatTime(elapsed)}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-black/60" strokeWidth={2.5} />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <BookOpen className="w-4 h-4 text-black/60 shrink-0" strokeWidth={2.5} />
+            <label htmlFor="session-subject" className="sr-only">Study subject</label>
             <input
+              id="session-subject"
               type="text"
               value={sessionSubject}
               onChange={(e) => setSessionSubject(e.target.value)}
               placeholder="What are you studying?"
-              className="bg-transparent outline-none font-bold text-sm text-black placeholder:text-black/30 w-40 md:w-60"
+              className="bg-transparent outline-none font-bold text-sm text-black placeholder:text-black/30 w-full sm:w-60"
             />
           </div>
         </div>

@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, GraduationCap, BookOpen, Clock, MessageSquare, Zap } from "lucide-react";
+import { ArrowLeft, GraduationCap, Clock, MessageSquare, Zap } from "lucide-react";
 import { getFriendById } from "@/app/components/friends/friendsData";
 
 const AVATAR_COLORS = [
@@ -101,10 +101,7 @@ export default function FriendProfilePage() {
           <div className="space-y-3">
             <div>
               <p className="font-black text-xs text-black/50 uppercase tracking-wider">Email</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Mail className="w-3.5 h-3.5 text-black/60" strokeWidth={2.5} />
-                <p className="font-bold text-sm text-black">{friend.email}</p>
-              </div>
+              <p className="font-bold text-sm text-black mt-1">{friend.email}</p>
             </div>
             <div>
               <p className="font-black text-xs text-black/50 uppercase tracking-wider">University</p>
@@ -112,10 +109,7 @@ export default function FriendProfilePage() {
             </div>
             <div>
               <p className="font-black text-xs text-black/50 uppercase tracking-wider">Major</p>
-              <div className="flex items-center gap-2 mt-1">
-                <BookOpen className="w-3.5 h-3.5 text-black/60" strokeWidth={2.5} />
-                <p className="font-bold text-sm text-black">{friend.major}</p>
-              </div>
+              <p className="font-bold text-sm text-black mt-1">{friend.major}</p>
             </div>
           </div>
         </div>
@@ -131,22 +125,11 @@ export default function FriendProfilePage() {
               <span className="font-black text-2xl text-black">{friend.studyHours}</span>
               <span className="font-bold text-[10px] text-black/60 uppercase">Hours</span>
             </div>
-            <div className="flex-1 space-y-2">
-              <div className="flex justify-between">
-                <span className="font-black text-xs text-black/50 uppercase tracking-wider">Total Study Hours</span>
-              </div>
-              <div className="w-full h-4 bg-[#FFFDF7] border-2 border-black">
-                <div
-                  className="h-full bg-[#B3FFB3] border-r-2 border-black transition-all"
-                  style={{ width: `${Math.min((friend.studyHours / 600) * 100, 100)}%` }}
-                />
-              </div>
-              {friend.activity && (
-                <p className="font-bold text-xs text-black/60">
-                  Currently: {friend.activity}
-                </p>
-              )}
-            </div>
+            {friend.activity && (
+              <p className="font-bold text-sm text-black/70">
+                Currently: {friend.activity}
+              </p>
+            )}
           </div>
         </div>
       </div>
