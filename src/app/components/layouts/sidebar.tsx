@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, CheckSquare, PenLine, ChevronDown, Zap } from 'lucide-react';
+import { Home, Users, CheckSquare, PenLine, ChevronDown, Zap, Settings } from 'lucide-react';
 
 const NAV_COLORS = {
   HOME: { active: "bg-[#FFC107]", dot: "bg-[#FFC107]" },
@@ -96,12 +96,22 @@ const Sidebar = () => {
 
         {/* Footer */}
         <div className="p-4 border-t-[3px] border-black/10">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 bg-[#FFB3C1] border-2 border-black flex items-center justify-center">
-              <span className="font-black text-xs text-black">A</span>
+          <Link href="/settings/profile" className="block outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107]">
+            <div className={`flex items-center gap-3 px-3 py-2.5 border-[3px] transition-all ${
+              pathname.startsWith('/settings')
+                ? 'bg-[#E8D5FF] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black'
+                : 'border-transparent hover:bg-[#FFC107]/10 hover:border-black/10'
+            }`}>
+              <div className="w-8 h-8 bg-[#FFB3C1] border-2 border-black flex items-center justify-center">
+                <span className="font-black text-xs text-black">A</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-xs text-black uppercase tracking-wide truncate">Alfian</p>
+                <p className="font-bold text-xs text-black/40 truncate">Student</p>
+              </div>
+              <Settings className="w-4 h-4 text-black/40 shrink-0" strokeWidth={2.5} />
             </div>
-            <span className="font-bold text-xs text-black/40 uppercase tracking-wide">Student</span>
-          </div>
+          </Link>
         </div>
       </div>
     </>
