@@ -35,8 +35,8 @@ const TopBar = () => {
         </div>
 
         {/* Search */}
-        <div className="flex-1 flex items-center max-w-lg">
-          <div className="flex items-center w-full bg-[#FFFDF7] border-[3px] border-black px-4 py-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] focus-within:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus-within:translate-x-[1px] focus-within:translate-y-[1px] transition-all">
+        <div className="flex-1 flex items-center">
+          <div className="flex items-center w-full max-w-xl bg-[#FFFDF7] border-[3px] border-black px-4 py-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] focus-within:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus-within:translate-x-[1px] focus-within:translate-y-[1px] transition-all">
             <Search className="w-4 h-4 text-black mr-3 shrink-0" strokeWidth={3} />
             <label htmlFor="topbar-search" className="sr-only">Search</label>
             <input
