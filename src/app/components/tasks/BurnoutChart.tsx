@@ -19,7 +19,7 @@ export default function BurnoutChart({ data }: BurnoutChartProps) {
           7 Day Trend
         </span>
       </div>
-      <div className="h-[250px]" aria-label="Burnout probability chart over 7 days">
+      <div className="h-[250px]" role="img" aria-label="Burnout probability chart over 7 days">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -10 }}>
             <defs>

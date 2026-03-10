@@ -89,7 +89,7 @@ export default function BurnoutAnalysisTab() {
                   <td className="px-4 py-3 font-bold text-sm text-black">{m.taskName}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 h-4 border-2 border-black bg-gray-100 overflow-hidden">
+                      <div className="flex-1 h-4 border-2 border-black bg-gray-100 overflow-hidden" role="progressbar" aria-valuenow={m.contribution} aria-valuemin={0} aria-valuemax={100} aria-label={`${m.taskName} metric contribution`}>
                         <div
                           className={`h-full ${RISK_CONFIG[m.riskLevel].barColor} transition-all duration-300`}
                           style={{ width: `${m.contribution}%` }}
@@ -120,7 +120,7 @@ export default function BurnoutAnalysisTab() {
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-3 border-2 border-black bg-gray-100 overflow-hidden">
+                <div className="flex-1 h-3 border-2 border-black bg-gray-100 overflow-hidden" role="progressbar" aria-valuenow={m.contribution} aria-valuemin={0} aria-valuemax={100} aria-label={`${m.taskName} metric contribution`}>
                   <div
                     className={`h-full ${RISK_CONFIG[m.riskLevel].barColor}`}
                     style={{ width: `${m.contribution}%` }}

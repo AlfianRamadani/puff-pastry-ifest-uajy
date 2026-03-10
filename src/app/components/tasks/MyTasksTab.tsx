@@ -120,6 +120,7 @@ export default function MyTasksTab() {
 
       {/* Desktop Table */}
       <div className="hidden md:block border-[3px] border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+        {filtered.length > 0 ? (
         <table className="w-full">
           <thead>
             <tr className="border-b-[3px] border-black bg-gray-50">
@@ -151,7 +152,8 @@ export default function MyTasksTab() {
                   <td className="px-4 py-3">
                     <button
                       onClick={() => handleStatusToggle(task.id, task.status)}
-                      className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-[10px] uppercase tracking-wide cursor-pointer transition-colors duration-150 ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
+                      aria-label={`Mark ${task.name} as ${task.status === "DONE" ? "not started" : "done"}`}
+                      className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-[10px] uppercase tracking-wide cursor-pointer transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
                     >
                       {task.status}
                     </button>
@@ -173,6 +175,13 @@ export default function MyTasksTab() {
             })}
           </tbody>
         </table>
+        ) : (
+          <div className="p-12 text-center">
+            <p className="font-black text-sm uppercase tracking-wide text-gray-400">
+              {search ? "No tasks match your search" : "No tasks yet"}
+            </p>
+          </div>
+        )}
 
         {showForm ? (
           <div className="flex items-center gap-3 px-4 py-3 border-t-2 border-black bg-[#FFC107]/10">
@@ -217,7 +226,8 @@ export default function MyTasksTab() {
                   </span>
                   <button
                     onClick={() => handleStatusToggle(task.id, task.status)}
-                    className={`inline-block px-2 py-0.5 border-2 border-black font-black text-[10px] uppercase cursor-pointer transition-colors duration-150 ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
+                    aria-label={`Mark ${task.name} as ${task.status === "DONE" ? "not started" : "done"}`}
+                    className={`inline-block px-2 py-0.5 border-2 border-black font-black text-[10px] uppercase cursor-pointer transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
                   >
                     {task.status}
                   </button>
@@ -225,7 +235,7 @@ export default function MyTasksTab() {
                 <button
                   onClick={() => handleDelete(task.id)}
                   aria-label={`Delete ${task.name}`}
-                  className="p-2 text-black hover:text-red-600 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
+                  className="p-2.5 text-black hover:text-red-600 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
                 >
                   <Trash2 className="w-4 h-4" strokeWidth={2.5} />
                 </button>
