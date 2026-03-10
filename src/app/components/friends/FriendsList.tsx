@@ -6,6 +6,7 @@ import {
   FriendCardDesktop,
   FriendCardMobile,
   AddFriendCard,
+  AddFriendMobile,
 } from "./FriendCard";
 
 const FriendsList: React.FC = () => {
@@ -36,6 +37,7 @@ const FriendsList: React.FC = () => {
         {friends.map((f) => (
           <FriendCardMobile key={f.id} friend={f} />
         ))}
+        <AddFriendMobile />
       </div>
     </section>
   );
