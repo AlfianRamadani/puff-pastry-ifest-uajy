@@ -8,7 +8,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* md:flex-row makes it Side-by-Side on Desktop.
         flex-col makes it stack on Mobile.
       */}
-      <body className="flex flex-col md:flex-row h-screen w-full bg-[#F4F8FA] overflow-hidden m-0">
+      <body className="flex flex-col md:flex-row h-screen w-full bg-[#FFF9F0] overflow-hidden m-0">
         
         {/* 1. SIDEBAR FIRST */}
         <Sidebar />

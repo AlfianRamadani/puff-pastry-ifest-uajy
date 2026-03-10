@@ -142,12 +142,12 @@ export default function Home() {
       </div>
 
       {/* Quick Motivation */}
-      <div className="bg-black border-[3px] border-black p-5 sm:p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]">
+      <div className="bg-[#7C5CFC] border-[3px] border-black p-5 sm:p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
         <p className="font-black text-xs text-[#FFC107] uppercase tracking-widest mb-1">Daily Motivation</p>
         <p className="font-bold text-lg sm:text-xl text-white leading-snug">
           &ldquo;The only way to do great work is to love what you do.&rdquo;
         </p>
-        <p className="font-bold text-sm text-white/50 mt-2">— Steve Jobs</p>
+        <p className="font-bold text-sm text-white/60 mt-2">— Steve Jobs</p>
       </div>
     </div>
   );
