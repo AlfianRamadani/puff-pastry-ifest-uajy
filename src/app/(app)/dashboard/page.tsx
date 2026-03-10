@@ -125,7 +125,7 @@ export default function Home() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm text-black truncate">{course.name}</p>
-                  <p className="font-bold text-xs text-gray-500">{course.credits} SKS</p>
+                  <p className="font-bold text-xs text-gray-500">{course.credits} Credits</p>
                 </div>
                 <span className="px-3 py-1 bg-[#FFC107] border-2 border-black font-black text-sm text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                   {course.grade}
@@ -135,7 +135,7 @@ export default function Home() {
           </div>
           <div className="px-5 py-3 border-t-2 border-black">
             <Link href="/tasks" className="flex items-center gap-1 font-black text-xs text-black uppercase tracking-wide hover:underline outline-none focus-visible:ring-2 focus-visible:ring-black">
-              View academic load <ArrowRight className="w-3 h-3" strokeWidth={3} />
+              View all courses <ArrowRight className="w-3 h-3" strokeWidth={3} />
             </Link>
           </div>
         </div>
@@ -147,7 +147,7 @@ export default function Home() {
         <p className="font-bold text-lg sm:text-xl text-white leading-snug">
           &ldquo;The only way to do great work is to love what you do.&rdquo;
         </p>
-        <p className="font-bold text-sm text-white/60 mt-2">— Steve Jobs</p>
+        <p className="font-bold text-sm text-white/70 mt-2">— Steve Jobs</p>
       </div>
     </div>
   );

@@ -26,13 +26,13 @@ const FEATURES = [
 const STATS = [
   { value: "2,400+", label: "Study Hours Logged", color: "bg-[#FFC107]" },
   { value: "150+", label: "Active Students", color: "bg-[#B3D4FF]" },
-  { value: "98%", label: "Say They Study More", color: "bg-[#FFB3C1]" },
+  { value: "98%", label: "Report Better Focus", color: "bg-[#FFB3C1]" },
 ];
 
 const STEPS = [
   { num: "01", title: "Open the App", desc: "No sign-up needed, just jump in", color: "bg-[#FFC107]" },
   { num: "02", title: "Add Courses", desc: "Set up your class schedule", color: "bg-[#B3D4FF]" },
-  { num: "03", title: "Start Studying", desc: "Track, collaborate, and grow", color: "bg-[#B3FFB3]" },
+  { num: "03", title: "Start Studying", desc: "Track hours, study with friends, and improve", color: "bg-[#B3FFB3]" },
 ];
 
 export default function LandingPage() {
@@ -86,7 +86,7 @@ export default function LandingPage() {
                   href="#features"
                   className="inline-flex items-center gap-2 px-7 py-4 bg-white border-[3px] border-black font-black text-sm text-black uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all outline-none focus-visible:ring-2 focus-visible:ring-black"
                 >
-                  Learn More
+                  See Features
                 </a>
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function LandingPage() {
             Ready to Study<br />Smarter?
           </h2>
           <p className="font-bold text-base text-black/70 mt-4 max-w-md mx-auto">
-            No sign-up required. Just open and start studying smarter.
+            No sign-up required. Just open the app and start right away.
           </p>
           <Link
             href="/dashboard"

@@ -59,12 +59,12 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
                   }
                   className="w-full px-3 py-2 border-2 border-black font-black text-xs uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
                 >
-                  <option value="THEORY">Theory</option>
-                  <option value="PRACTICUM">Practicum</option>
+                  <option value="THEORY">Lecture</option>
+                  <option value="PRACTICUM">Lab</option>
                 </select>
               </div>
               <div>
-                <label htmlFor="mobile-course-sks" className="sr-only">Credit hours (SKS)</label>
+                <label htmlFor="mobile-course-sks" className="sr-only">Credits</label>
                 <input
                   id="mobile-course-sks"
                   type="number"
@@ -110,11 +110,11 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
                       : "bg-[#B3D4FF] text-black"
                   }`}
                 >
-                  {course.type}
+                  {course.type === "THEORY" ? "LECTURE" : "LAB"}
                 </span>
                 <p className="font-bold text-sm text-black">{course.name}</p>
                 <p className="font-black text-xs text-gray-500 uppercase tracking-wide mt-1">
-                  Load: {course.sks} SKS
+                  {course.sks} Credits
                 </p>
               </div>
               <button

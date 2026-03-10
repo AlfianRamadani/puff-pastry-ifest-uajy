@@ -42,7 +42,7 @@ const TopBar = () => {
             <input
               id="topbar-search"
               type="text"
-              placeholder="Search anything..."
+              placeholder="Search tasks, courses, friends..."
               className="bg-transparent outline-none w-full font-bold text-sm text-black placeholder:text-black/30 tracking-wide"
             />
           </div>

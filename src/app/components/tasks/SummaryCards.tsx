@@ -19,7 +19,7 @@ export default function SummaryCards({ totalSKS, courseCount }: SummaryCardsProp
             Total Semester Load
           </span>
         </div>
-        <p className="font-black text-4xl text-black">{totalSKS} SKS</p>
+        <p className="font-black text-4xl text-black">{totalSKS} Credits</p>
       </div>
 
       {/* Courses Taken */}
@@ -31,7 +31,7 @@ export default function SummaryCards({ totalSKS, courseCount }: SummaryCardsProp
           </span>
         </div>
         <p className="font-black text-4xl text-black">
-          {String(courseCount).padStart(2, "0")} <span className="text-lg">UNITS</span>
+          {String(courseCount).padStart(2, "0")} <span className="text-lg">Courses</span>
         </p>
       </div>
 

@@ -157,7 +157,7 @@ export default function MyTasksTab() {
               <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-28">Priority</th>
               <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-32">Status</th>
               <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-28">Due Date</th>
-              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-20">Action</th>
+              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-20"><span className="sr-only">Delete</span></th>
             </tr>
           </thead>
           <tbody>

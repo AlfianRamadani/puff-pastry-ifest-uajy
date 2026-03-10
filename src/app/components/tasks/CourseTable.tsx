@@ -44,10 +44,10 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                 Type
               </th>
               <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-20">
-                SKS
+                Credits
               </th>
               <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-20">
-                Action
+                <span className="sr-only">Delete</span>
               </th>
             </tr>
           </thead>
@@ -71,7 +71,7 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                         : "bg-[#B3D4FF] text-black"
                     }`}
                   >
-                    {course.type}
+                    {course.type === "THEORY" ? "LECTURE" : "LAB"}
                   </span>
                 </td>
                 <td className="px-4 py-3 font-black text-sm text-black">
@@ -118,12 +118,12 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                     }
                     className="px-3 py-1.5 border-2 border-black font-black text-[10px] uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
                   >
-                    <option value="THEORY">Theory</option>
-                    <option value="PRACTICUM">Practicum</option>
+                    <option value="THEORY">Lecture</option>
+                    <option value="PRACTICUM">Lab</option>
                   </select>
                 </td>
                 <td className="px-4 py-3">
-                  <label htmlFor="course-sks" className="sr-only">Credit hours (SKS)</label>
+                  <label htmlFor="course-sks" className="sr-only">Credits</label>
                   <input
                     id="course-sks"
                     type="number"
