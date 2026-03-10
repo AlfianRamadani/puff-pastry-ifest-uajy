@@ -1,5 +1,6 @@
 import Sidebar from '@/app/components/layouts/sidebar';
 import TopBar from '@/app/components/layouts/topbar';
+import Walkthrough from '@/app/components/onboarding/Walkthrough';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+      <Walkthrough />
     </div>
   );
 }

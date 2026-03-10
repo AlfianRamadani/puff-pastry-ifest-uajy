@@ -49,7 +49,7 @@ const TopBar = () => {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-3 ml-6">
+        <div data-tour="topbar-actions" className="flex items-center gap-3 ml-6">
           <button
             aria-label="Notifications"
             className="relative p-2.5 bg-[#B3D4FF] border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all outline-none focus-visible:ring-2 focus-visible:ring-black"
