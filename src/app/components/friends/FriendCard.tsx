@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
+import Link from "next/link";
 import { MessageSquare, UserPlus, Zap, Send } from "lucide-react";
 import type { Friend } from "./friendsData";
 
@@ -55,17 +56,17 @@ export const FriendCardDesktop: React.FC<FriendCardProps> = memo(({ friend }) =>
             <span
               className={`w-2 h-2 rounded-full ${status.dotColor} shrink-0`}
             />
-            <span className="text-[10px] font-bold uppercase tracking-wide text-gray-600">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-black/60">
               {status.label}
             </span>
           </div>
           {friend.activity && (
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mt-1 truncate">
+            <p className="text-xs font-bold text-black/50 uppercase tracking-wide mt-1 truncate">
               {friend.activity}
             </p>
           )}
           {friend.lastSeen && (
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mt-1">
+            <p className="text-xs font-bold text-black/40 uppercase tracking-wide mt-1">
               {friend.lastSeen}
             </p>
           )}
@@ -74,21 +75,24 @@ export const FriendCardDesktop: React.FC<FriendCardProps> = memo(({ friend }) =>
 
       {/* Actions */}
       <div className="flex gap-2">
-        <button
-          disabled={!isActive}
-          className={`flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-1 ${
-            isActive
-              ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
-              : "bg-gray-200 text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          Message
-        </button>
-        <button
-          className="flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide bg-white text-black hover:bg-gray-100 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-1"
+        {isActive ? (
+          <Link
+            href={`/friends/${friend.id}/message`}
+            className="flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide text-center bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-1"
+          >
+            Message
+          </Link>
+        ) : (
+          <span className="flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide text-center bg-black/10 text-black/40 cursor-not-allowed">
+            Message
+          </span>
+        )}
+        <Link
+          href={`/friends/${friend.id}/profile`}
+          className="flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide text-center bg-white text-black hover:bg-gray-100 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-1"
         >
           View Profile
-        </button>
+        </Link>
       </div>
     </div>
   );
@@ -110,29 +114,31 @@ export const FriendCardMobile: React.FC<FriendCardProps> = memo(({ friend }) => 
 
   return (
     <div className="flex items-center gap-3 bg-white border-[3px] border-black p-3 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-      <div
-        className={`${avatarColor} w-10 h-10 border-2 border-black flex items-center justify-center font-black text-xs text-black shrink-0`}
-      >
-        {friend.avatar}
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-black text-xs text-black uppercase tracking-wide truncate">
-          {friend.name}
-        </h3>
-        <div className="flex items-center gap-1 mt-0.5">
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${status.dotColor} shrink-0`}
-          />
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide truncate">
-            {statusText}
-          </span>
+      <Link href={`/friends/${friend.id}/profile`} className="flex items-center gap-3 flex-1 min-w-0">
+        <div
+          className={`${avatarColor} w-10 h-10 border-2 border-black flex items-center justify-center font-black text-xs text-black shrink-0`}
+        >
+          {friend.avatar}
         </div>
-      </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-black text-xs text-black uppercase tracking-wide truncate">
+            {friend.name}
+          </h3>
+          <div className="flex items-center gap-1 mt-0.5">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${status.dotColor} shrink-0`}
+            />
+            <span className="text-[10px] font-bold text-black/50 uppercase tracking-wide truncate">
+              {statusText}
+            </span>
+          </div>
+        </div>
+      </Link>
       <div className="flex gap-1.5 shrink-0">
         <button
           disabled={!isActive}
           aria-label={`Send invite to ${friend.name}`}
-          className={`p-2 border-2 border-black outline-none focus-visible:ring-2 focus-visible:ring-black ${isActive ? "bg-[#FFC107] active:translate-x-[1px] active:translate-y-[1px]" : "bg-gray-200 cursor-not-allowed"} transition-all duration-150`}
+          className={`p-2 border-2 border-black outline-none focus-visible:ring-2 focus-visible:ring-black ${isActive ? "bg-[#FFC107] active:translate-x-[1px] active:translate-y-[1px]" : "bg-black/10 cursor-not-allowed"} transition-all duration-150`}
         >
           <Send className="w-4 h-4 text-black" strokeWidth={2.5} />
         </button>
@@ -144,12 +150,13 @@ export const FriendCardMobile: React.FC<FriendCardProps> = memo(({ friend }) => 
             <Zap className="w-4 h-4 text-black" strokeWidth={2.5} />
           </button>
         )}
-        <button
+        <Link
+          href={`/friends/${friend.id}/message`}
           aria-label={`Message ${friend.name}`}
           className="p-2 border-2 border-black bg-white hover:bg-gray-100 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
         >
           <MessageSquare className="w-4 h-4 text-black" strokeWidth={2.5} />
-        </button>
+        </Link>
       </div>
     </div>
   );

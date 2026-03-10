@@ -1,8 +1,20 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useCallback, useEffect } from "react";
-import { Plus, X, Search } from "lucide-react";
+import { Plus, X, Search, Zap, Clock, Square, BookOpen } from "lucide-react";
 import { getFriends, type Friend } from "./friendsData";
+
+const AVATAR_COLORS = [
+  "bg-[#FFD1B3]", "bg-[#8FFFE1]", "bg-[#FFC107]",
+  "bg-[#B8D4FF]", "bg-[#FFB3D9]", "bg-[#C4B5FD]",
+];
+
+function formatTime(seconds: number) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
 
 const StartStudySession: React.FC = () => {
   const allFriends = useMemo(() => getFriends(), []);
@@ -14,6 +26,12 @@ const StartStudySession: React.FC = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Active session state
+  const [sessionActive, setSessionActive] = useState(false);
+  const [sessionSubject, setSessionSubject] = useState("");
+  const [sessionParticipants, setSessionParticipants] = useState<Friend[]>([]);
+  const [elapsed, setElapsed] = useState(0);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return [];
@@ -35,8 +53,8 @@ const StartStudySession: React.FC = () => {
     setSelected((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
-  // Close dropdown on click outside or Escape
   useEffect(() => {
+    if (!showDropdown) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
@@ -51,10 +69,99 @@ const StartStudySession: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
+  }, [showDropdown]);
+
+  // Timer
+  useEffect(() => {
+    if (!sessionActive) return;
+    const interval = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [sessionActive]);
+
+  const startSession = useCallback(() => {
+    setSessionParticipants([...selected]);
+    setSessionActive(true);
+    setElapsed(0);
+  }, [selected]);
+
+  const endSession = useCallback(() => {
+    setSessionActive(false);
+    setSessionSubject("");
+    setElapsed(0);
   }, []);
 
   const isOpen = showDropdown && filtered.length > 0;
   const listboxId = "friend-search-listbox";
+
+  // Active session view
+  if (sessionActive) {
+    return (
+      <section className="bg-[#FFC107] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 md:p-7">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-black border-2 border-black flex items-center justify-center">
+              <Zap className="w-5 h-5 text-[#FFC107]" strokeWidth={3} />
+            </div>
+            <div>
+              <h2 className="font-black text-base md:text-lg text-black uppercase tracking-wider">Session Active</h2>
+              <p className="font-bold text-xs text-black/60 uppercase tracking-wide">
+                {sessionParticipants.length} participant{sessionParticipants.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={endSession}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#FF4444] border-[3px] border-black font-black text-xs text-white uppercase tracking-wide shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all outline-none focus-visible:ring-2 focus-visible:ring-black"
+          >
+            <Square className="w-3 h-3" strokeWidth={3} />
+            End
+          </button>
+        </div>
+
+        {/* Timer */}
+        <div className="bg-white border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-black" strokeWidth={2.5} />
+            <span className="font-black text-2xl md:text-3xl text-black tracking-widest font-mono">
+              {formatTime(elapsed)}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <BookOpen className="w-4 h-4 text-black/60 shrink-0" strokeWidth={2.5} />
+            <label htmlFor="session-subject" className="sr-only">Study subject</label>
+            <input
+              id="session-subject"
+              type="text"
+              value={sessionSubject}
+              onChange={(e) => setSessionSubject(e.target.value)}
+              placeholder="What are you studying?"
+              className="bg-transparent outline-none font-bold text-sm text-black placeholder:text-black/30 w-full sm:w-60"
+            />
+          </div>
+        </div>
+
+        {/* Participants */}
+        <div className="flex flex-wrap gap-2">
+          <span className="bg-[#B3FFB3] border-2 border-black px-3 py-1.5 font-black text-xs text-black uppercase tracking-wide flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-green-500" />
+            You
+          </span>
+          {sessionParticipants.map((f) => {
+            const avatarColor = AVATAR_COLORS[parseInt(f.id) % AVATAR_COLORS.length];
+            return (
+              <span
+                key={f.id}
+                className={`${avatarColor} border-2 border-black px-3 py-1.5 font-black text-xs text-black uppercase tracking-wide flex items-center gap-1.5`}
+              >
+                <span className="w-2 h-2 rounded-full bg-green-500" />
+                {f.name}
+              </span>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-white border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 md:p-7">
@@ -73,14 +180,14 @@ const StartStudySession: React.FC = () => {
             aria-expanded={isOpen}
             aria-controls={listboxId}
             aria-autocomplete="list"
-            placeholder="Invite friends by name or email..."
+            placeholder="Search friends..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setShowDropdown(true);
             }}
             onFocus={() => query && setShowDropdown(true)}
-            className="bg-transparent outline-none w-full font-bold text-sm text-black placeholder:text-[#5E6A78] tracking-wide"
+            className="bg-transparent outline-none w-full font-bold text-sm text-black placeholder:text-black/40 tracking-wide"
           />
           <button
             onClick={() => query && setShowDropdown(!showDropdown)}
@@ -137,6 +244,7 @@ const StartStudySession: React.FC = () => {
 
       {/* CTA */}
       <button
+        onClick={startSession}
         disabled={selected.length === 0}
         className="w-full bg-[#FFC107] border-[3px] border-black py-3 font-black text-sm md:text-base text-black uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
       >
