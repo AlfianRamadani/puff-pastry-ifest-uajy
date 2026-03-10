@@ -12,15 +12,15 @@ const NAV_COLORS = {
   NOTES: { active: "bg-[#FFB3C1]", dot: "bg-[#FFB3C1]" },
 } as const;
 
+const navItems = [
+  { name: 'HOME' as const, icon: Home, href: '/' },
+  { name: 'FRIENDS' as const, icon: Users, href: '/friends' },
+  { name: 'TASKS' as const, icon: CheckSquare, href: '/tasks', aliases: ['/testing'] },
+  { name: 'NOTES' as const, icon: PenLine, href: '/notes' },
+];
+
 const Sidebar = () => {
   const pathname = usePathname();
-
-  const navItems = [
-    { name: 'HOME' as const, icon: Home, href: '/' },
-    { name: 'FRIENDS' as const, icon: Users, href: '/friends' },
-    { name: 'TASKS' as const, icon: CheckSquare, href: '/tasks', aliases: ['/testing'] },
-    { name: 'NOTES' as const, icon: PenLine, href: '/notes' },
-  ];
 
   return (
     <>
