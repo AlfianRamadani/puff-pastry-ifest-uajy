@@ -84,7 +84,7 @@ const StartStudySession: React.FC = () => {
           />
           <button
             onClick={() => query && setShowDropdown(!showDropdown)}
-            className="ml-2 w-8 h-8 bg-black text-white flex items-center justify-center shrink-0 border-2 border-black outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-1"
+            className="ml-2 w-10 h-10 bg-black text-white flex items-center justify-center shrink-0 border-2 border-black outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-1"
             aria-label="Search friends"
           >
             <Plus className="w-4 h-4" strokeWidth={3} />
@@ -126,7 +126,7 @@ const StartStudySession: React.FC = () => {
               <button
                 onClick={() => removeFriend(f.id)}
                 aria-label={`Remove ${f.name}`}
-                className="ml-1 p-0.5 hover:text-red-600 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-black"
+                className="ml-1 p-1 hover:text-red-600 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black rounded-sm"
               >
                 <X className="w-3.5 h-3.5" strokeWidth={3} />
               </button>

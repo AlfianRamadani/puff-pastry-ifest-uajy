@@ -76,7 +76,7 @@ export const FriendCardDesktop: React.FC<FriendCardProps> = memo(({ friend }) =>
       <div className="flex gap-2">
         <button
           disabled={!isActive}
-          className={`flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide transition-all outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-1 ${
+          className={`flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-1 ${
             isActive
               ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
               : "bg-gray-200 text-gray-400 cursor-not-allowed"
@@ -85,7 +85,7 @@ export const FriendCardDesktop: React.FC<FriendCardProps> = memo(({ friend }) =>
           Message
         </button>
         <button
-          className="flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide bg-white text-black hover:bg-gray-100 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-1"
+          className="flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide bg-white text-black hover:bg-gray-100 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-1"
         >
           View Profile
         </button>
@@ -132,23 +132,23 @@ export const FriendCardMobile: React.FC<FriendCardProps> = memo(({ friend }) => 
         <button
           disabled={!isActive}
           aria-label={`Send invite to ${friend.name}`}
-          className={`p-1.5 border-2 border-black outline-none focus-visible:ring-2 focus-visible:ring-black ${isActive ? "bg-[#FFC107] active:translate-x-[1px] active:translate-y-[1px]" : "bg-gray-200 cursor-not-allowed"} transition-all`}
+          className={`p-2 border-2 border-black outline-none focus-visible:ring-2 focus-visible:ring-black ${isActive ? "bg-[#FFC107] active:translate-x-[1px] active:translate-y-[1px]" : "bg-gray-200 cursor-not-allowed"} transition-all duration-150`}
         >
-          <Send className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
+          <Send className="w-4 h-4 text-black" strokeWidth={2.5} />
         </button>
         {friend.status === "in-session" && (
           <button
             aria-label={`Join ${friend.name}'s session`}
-            className="p-1.5 border-2 border-black bg-[#FFC107] active:translate-x-[1px] active:translate-y-[1px] transition-all outline-none focus-visible:ring-2 focus-visible:ring-black"
+            className="p-2 border-2 border-black bg-[#FFC107] active:translate-x-[1px] active:translate-y-[1px] transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
           >
-            <Zap className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
+            <Zap className="w-4 h-4 text-black" strokeWidth={2.5} />
           </button>
         )}
         <button
           aria-label={`Message ${friend.name}`}
-          className="p-1.5 border-2 border-black bg-white hover:bg-gray-100 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-black"
+          className="p-2 border-2 border-black bg-white hover:bg-gray-100 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
         >
-          <MessageSquare className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
+          <MessageSquare className="w-4 h-4 text-black" strokeWidth={2.5} />
         </button>
       </div>
     </div>
@@ -158,8 +158,8 @@ FriendCardMobile.displayName = "FriendCardMobile";
 
 // Add new friend placeholder (desktop)
 export const AddFriendCard: React.FC = () => (
-  <button className="w-full h-full min-h-[160px] border-[3px] border-dashed border-black bg-white flex flex-col items-center justify-center gap-2 hover:bg-[#F4F8FA] transition-colors cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2">
-    <div className="w-12 h-12 border-[3px] border-dashed border-black rounded-full flex items-center justify-center group-hover:border-solid group-hover:bg-[#FFC107] transition-all">
+  <button className="w-full h-full min-h-[160px] border-[3px] border-dashed border-black bg-white flex flex-col items-center justify-center gap-2 hover:bg-[#F4F8FA] transition-colors duration-150 cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2">
+    <div className="w-12 h-12 border-[3px] border-dashed border-black rounded-full flex items-center justify-center group-hover:border-solid group-hover:bg-[#FFC107] transition-all duration-150">
       <UserPlus className="w-5 h-5 text-black" strokeWidth={2.5} />
     </div>
     <span className="font-black text-xs text-black uppercase tracking-wide">
@@ -170,7 +170,7 @@ export const AddFriendCard: React.FC = () => (
 
 // Add new friend (mobile)
 export const AddFriendMobile: React.FC = () => (
-  <button className="flex items-center gap-3 bg-white border-[3px] border-dashed border-black p-3 w-full hover:bg-[#F4F8FA] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-black">
+  <button className="flex items-center gap-3 bg-white border-[3px] border-dashed border-black p-3 w-full hover:bg-[#F4F8FA] transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black">
     <div className="w-10 h-10 border-2 border-dashed border-black rounded-full flex items-center justify-center shrink-0">
       <UserPlus className="w-4 h-4 text-black" strokeWidth={2.5} />
     </div>
