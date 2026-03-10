@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Search, Bell, Sparkles, Settings, LogOut, ChevronDown } from 'lucide-react';
@@ -30,12 +30,15 @@ const TopBar = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  const closeDropdown = useCallback(() => setProfileOpen(false), []);
+
   useEffect(() => {
+    if (!profileOpen) return;
     const handleClick = (e: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) closeDropdown();
     };
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setProfileOpen(false);
+      if (e.key === 'Escape') closeDropdown();
     };
     document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleKey);
@@ -43,7 +46,7 @@ const TopBar = () => {
       document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleKey);
     };
-  }, []);
+  }, [profileOpen, closeDropdown]);
 
   return (
     <nav className="w-full font-sans antialiased">

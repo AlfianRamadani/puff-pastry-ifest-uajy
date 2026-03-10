@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, Mail, GraduationCap, BookOpen, Save, Camera, Clock, Target } from 'lucide-react';
 
 interface Profile {
@@ -16,8 +16,8 @@ interface Profile {
 
 const DEFAULT_PROFILE: Profile = {
   name: 'Alfian Ramadani',
-  email: 'alfian@student.uajy.ac.id',
-  university: 'Universitas Atma Jaya Yogyakarta',
+  email: '11251068@student.itk.ac.id',
+  university: 'Institut Teknologi kalimantan',
   major: 'Informatika',
   bio: 'Computer science student passionate about web development and UI design.',
   avatar: 'A',
@@ -63,15 +63,18 @@ export default function ProfileSettingsPage() {
     return () => clearTimeout(t);
   }, [saved]);
 
-  const update = (field: keyof Profile, value: string | number) => {
+  const update = useCallback((field: keyof Profile, value: string | number) => {
     setProfile((p) => ({ ...p, [field]: value }));
     setSaved(false);
-  };
+  }, []);
 
-  const handleSave = () => {
-    saveProfile(profile);
+  const handleSave = useCallback(() => {
+    setProfile((current) => {
+      saveProfile(current);
+      return current;
+    });
     setSaved(true);
-  };
+  }, []);
 
   return (
     <div className="w-full max-w-4xl mx-auto py-8 px-4 md:px-0 space-y-8">
