@@ -62,8 +62,8 @@ const Sidebar = () => {
               <Zap className="w-6 h-6 text-black" strokeWidth={3} />
             </div>
             <div className="flex flex-col leading-tight flex-1">
-              <span className="font-black text-sm text-black tracking-wide">PUFF PASTRY</span>
-              <span className="font-bold text-xs text-black/50">STUDY HUB</span>
+              <span className="font-black text-sm text-black tracking-wide">GRIT</span>
+              <span className="font-bold text-xs text-black/60">STUDY HUB</span>
             </div>
             <ChevronDown className="w-5 h-5 text-black" strokeWidth={3} />
           </div>
@@ -109,7 +109,7 @@ const Sidebar = () => {
                 <p className="font-black text-xs text-black uppercase tracking-wide truncate">Alfian</p>
                 <p className="font-bold text-xs text-black/60 truncate">Student</p>
               </div>
-              <Settings className="w-4 h-4 text-black/40 shrink-0" strokeWidth={2.5} />
+              <Settings className="w-4 h-4 text-black/60 shrink-0" strokeWidth={2.5} />
             </div>
           </Link>
         </div>

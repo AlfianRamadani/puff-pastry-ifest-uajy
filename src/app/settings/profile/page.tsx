@@ -122,14 +122,14 @@ export default function ProfileSettingsPage() {
                     if (v) update('avatar', v.charAt(0).toUpperCase());
                     setEditingAvatar(false);
                   }}
-                  className="w-10 h-10 text-center bg-white border-[3px] border-black font-black text-lg text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] outline-none uppercase"
+                  className="w-10 h-10 text-center bg-white border-[3px] border-black font-black text-lg text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] outline-none uppercase focus-visible:ring-2 focus-visible:ring-[#FFC107]"
                   aria-label="Avatar initial"
                 />
               </div>
             ) : (
               <button
                 onClick={() => setEditingAvatar(true)}
-                className="absolute -bottom-2 -right-2 p-2 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[1px] active:translate-y-[1px] transition-all"
+                className="absolute -bottom-2 -right-2 p-2 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[1px] active:translate-y-[1px] transition-all outline-none focus-visible:ring-2 focus-visible:ring-black"
                 aria-label="Change avatar initial"
               >
                 <Camera className="w-4 h-4 text-black" strokeWidth={2.5} />

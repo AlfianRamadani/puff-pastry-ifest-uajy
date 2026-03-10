@@ -124,7 +124,7 @@ const TopBar = () => {
                     href="/settings/profile"
                     role="menuitem"
                     onClick={() => setProfileOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-[#FFC107]/15 transition-colors border-b-2 border-black/10"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-[#FFC107]/15 transition-colors border-b-2 border-black/10 outline-none focus-visible:bg-[#FFC107]/15"
                   >
                     <Settings className="w-4 h-4 text-black" strokeWidth={2.5} />
                     <span className="font-bold text-sm text-black">Profile & Settings</span>
@@ -132,7 +132,7 @@ const TopBar = () => {
                   <button
                     role="menuitem"
                     onClick={() => { setProfileOpen(false); alert('Logged out'); }}
-                    className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-[#FF4444]/10 transition-colors"
+                    className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-[#FF4444]/10 transition-colors outline-none focus-visible:bg-[#FF4444]/10"
                   >
                     <LogOut className="w-4 h-4 text-[#FF4444]" strokeWidth={2.5} />
                     <span className="font-bold text-sm text-[#FF4444]">Log Out</span>
@@ -174,7 +174,7 @@ const TopBar = () => {
               id="mobile-topbar-search"
               type="text"
               placeholder="Search..."
-              className="bg-transparent outline-none w-full font-bold text-sm text-black placeholder:text-gray-400"
+              className="bg-transparent outline-none w-full font-bold text-sm text-black placeholder:text-black/30"
             />
           </div>
         </div>
