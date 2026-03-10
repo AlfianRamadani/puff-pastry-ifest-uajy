@@ -100,15 +100,15 @@ export default function FriendProfilePage() {
           </h3>
           <div className="space-y-3">
             <div>
-              <p className="font-black text-xs text-black/50 uppercase tracking-wider">Email</p>
+              <p className="font-black text-xs text-black/60 uppercase tracking-wider">Email</p>
               <p className="font-bold text-sm text-black mt-1">{friend.email}</p>
             </div>
             <div>
-              <p className="font-black text-xs text-black/50 uppercase tracking-wider">University</p>
+              <p className="font-black text-xs text-black/60 uppercase tracking-wider">University</p>
               <p className="font-bold text-sm text-black mt-1">{friend.university}</p>
             </div>
             <div>
-              <p className="font-black text-xs text-black/50 uppercase tracking-wider">Major</p>
+              <p className="font-black text-xs text-black/60 uppercase tracking-wider">Major</p>
               <p className="font-bold text-sm text-black mt-1">{friend.major}</p>
             </div>
           </div>

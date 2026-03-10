@@ -165,7 +165,7 @@ export default function FriendMessagePage() {
               }`}
             >
               <p className="font-bold text-sm text-black">{msg.text}</p>
-              <p className="font-bold text-[10px] text-black/40 mt-1 text-right uppercase">{msg.time}</p>
+              <p className="font-bold text-[10px] text-black/60 mt-1 text-right uppercase">{msg.time}</p>
             </div>
           </div>
         ))}

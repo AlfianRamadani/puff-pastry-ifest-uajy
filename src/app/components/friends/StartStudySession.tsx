@@ -180,14 +180,14 @@ const StartStudySession: React.FC = () => {
             aria-expanded={isOpen}
             aria-controls={listboxId}
             aria-autocomplete="list"
-            placeholder="Invite friends by name or email..."
+            placeholder="Search friends..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setShowDropdown(true);
             }}
             onFocus={() => query && setShowDropdown(true)}
-            className="bg-transparent outline-none w-full font-bold text-sm text-black placeholder:text-[#5E6A78] tracking-wide"
+            className="bg-transparent outline-none w-full font-bold text-sm text-black placeholder:text-black/40 tracking-wide"
           />
           <button
             onClick={() => query && setShowDropdown(!showDropdown)}

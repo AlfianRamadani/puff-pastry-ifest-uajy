@@ -56,17 +56,17 @@ export const FriendCardDesktop: React.FC<FriendCardProps> = memo(({ friend }) =>
             <span
               className={`w-2 h-2 rounded-full ${status.dotColor} shrink-0`}
             />
-            <span className="text-[10px] font-bold uppercase tracking-wide text-gray-600">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-black/60">
               {status.label}
             </span>
           </div>
           {friend.activity && (
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mt-1 truncate">
+            <p className="text-xs font-bold text-black/50 uppercase tracking-wide mt-1 truncate">
               {friend.activity}
             </p>
           )}
           {friend.lastSeen && (
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mt-1">
+            <p className="text-xs font-bold text-black/40 uppercase tracking-wide mt-1">
               {friend.lastSeen}
             </p>
           )}
@@ -83,7 +83,7 @@ export const FriendCardDesktop: React.FC<FriendCardProps> = memo(({ friend }) =>
             Message
           </Link>
         ) : (
-          <span className="flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide text-center bg-gray-200 text-gray-400 cursor-not-allowed">
+          <span className="flex-1 py-2 border-2 border-black font-black text-xs uppercase tracking-wide text-center bg-black/10 text-black/40 cursor-not-allowed">
             Message
           </span>
         )}
@@ -128,7 +128,7 @@ export const FriendCardMobile: React.FC<FriendCardProps> = memo(({ friend }) => 
             <span
               className={`w-1.5 h-1.5 rounded-full ${status.dotColor} shrink-0`}
             />
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide truncate">
+            <span className="text-[10px] font-bold text-black/50 uppercase tracking-wide truncate">
               {statusText}
             </span>
           </div>
@@ -138,7 +138,7 @@ export const FriendCardMobile: React.FC<FriendCardProps> = memo(({ friend }) => 
         <button
           disabled={!isActive}
           aria-label={`Send invite to ${friend.name}`}
-          className={`p-2 border-2 border-black outline-none focus-visible:ring-2 focus-visible:ring-black ${isActive ? "bg-[#FFC107] active:translate-x-[1px] active:translate-y-[1px]" : "bg-gray-200 cursor-not-allowed"} transition-all duration-150`}
+          className={`p-2 border-2 border-black outline-none focus-visible:ring-2 focus-visible:ring-black ${isActive ? "bg-[#FFC107] active:translate-x-[1px] active:translate-y-[1px]" : "bg-black/10 cursor-not-allowed"} transition-all duration-150`}
         >
           <Send className="w-4 h-4 text-black" strokeWidth={2.5} />
         </button>
