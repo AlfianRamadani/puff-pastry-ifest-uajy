@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Bell, Sparkles, Settings, LogOut, User, ChevronDown } from 'lucide-react';
+import { Search, Bell, Sparkles, Settings, LogOut, ChevronDown } from 'lucide-react';
 
 const PAGE_TITLES: Record<string, { label: string; color: string }> = {
   '/': { label: 'DASHBOARD', color: 'bg-[#FFC107]' },
@@ -31,11 +31,18 @@ const TopBar = () => {
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setProfileOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, []);
 
   return (
@@ -69,8 +76,8 @@ const TopBar = () => {
             className="relative p-2.5 bg-[#B3D4FF] border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all outline-none focus-visible:ring-2 focus-visible:ring-black"
           >
             <Bell className="w-5 h-5 text-black" strokeWidth={2.5} />
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#FF4444] border-2 border-black flex items-center justify-center">
-              <span className="font-black text-[8px] text-white">3</span>
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#FF4444] border-2 border-black flex items-center justify-center" aria-label="3 unread notifications">
+              <span className="font-black text-[8px] text-white" aria-hidden="true">3</span>
             </span>
           </button>
 
@@ -103,30 +110,25 @@ const TopBar = () => {
                     </div>
                     <div>
                       <p className="font-black text-sm text-black">Alfian Ramadani</p>
-                      <p className="font-bold text-xs text-black/50">alfian@student.uajy.ac.id</p>
+                      <p className="font-bold text-xs text-black/70">alfian@student.uajy.ac.id</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Menu Items */}
-                <div>
+                <div role="menu">
                   <Link
                     href="/settings/profile"
-                    onClick={() => setProfileOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-[#FFC107]/15 transition-colors border-b-2 border-black/10"
-                  >
-                    <User className="w-4 h-4 text-black" strokeWidth={2.5} />
-                    <span className="font-bold text-sm text-black">My Profile</span>
-                  </Link>
-                  <Link
-                    href="/settings/profile"
+                    role="menuitem"
                     onClick={() => setProfileOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 hover:bg-[#FFC107]/15 transition-colors border-b-2 border-black/10"
                   >
                     <Settings className="w-4 h-4 text-black" strokeWidth={2.5} />
-                    <span className="font-bold text-sm text-black">Settings</span>
+                    <span className="font-bold text-sm text-black">Profile & Settings</span>
                   </Link>
                   <button
+                    role="menuitem"
+                    onClick={() => { setProfileOpen(false); alert('Logged out'); }}
                     className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-[#FF4444]/10 transition-colors"
                   >
                     <LogOut className="w-4 h-4 text-[#FF4444]" strokeWidth={2.5} />
@@ -155,7 +157,7 @@ const TopBar = () => {
               <button
                 onClick={() => router.push('/settings/profile')}
                 aria-label="Profile settings"
-                className="w-9 h-9 bg-[#FFB3C1] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+                className="w-11 h-11 bg-[#FFB3C1] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
               >
                 <span className="font-black text-sm text-black">A</span>
               </button>

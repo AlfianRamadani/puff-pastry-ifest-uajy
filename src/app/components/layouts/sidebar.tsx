@@ -107,7 +107,7 @@ const Sidebar = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-black text-xs text-black uppercase tracking-wide truncate">Alfian</p>
-                <p className="font-bold text-xs text-black/40 truncate">Student</p>
+                <p className="font-bold text-xs text-black/60 truncate">Student</p>
               </div>
               <Settings className="w-4 h-4 text-black/40 shrink-0" strokeWidth={2.5} />
             </div>

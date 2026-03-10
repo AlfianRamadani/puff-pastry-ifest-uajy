@@ -51,10 +51,17 @@ const TIME_OPTIONS = [
 export default function ProfileSettingsPage() {
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE);
   const [saved, setSaved] = useState(false);
+  const [editingAvatar, setEditingAvatar] = useState(false);
 
   useEffect(() => {
     setProfile(loadProfile());
   }, []);
+
+  useEffect(() => {
+    if (!saved) return;
+    const t = setTimeout(() => setSaved(false), 2000);
+    return () => clearTimeout(t);
+  }, [saved]);
 
   const update = (field: keyof Profile, value: string | number) => {
     setProfile((p) => ({ ...p, [field]: value }));
@@ -64,7 +71,6 @@ export default function ProfileSettingsPage() {
   const handleSave = () => {
     saveProfile(profile);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   };
 
   return (
@@ -73,7 +79,7 @@ export default function ProfileSettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-black text-2xl md:text-3xl text-black tracking-wider uppercase">Profile Settings</h2>
-          <p className="font-bold text-sm text-black/40 mt-1">Manage your account and study preferences</p>
+          <p className="font-bold text-sm text-black/60 mt-1">Manage your account and study preferences</p>
         </div>
         <button
           onClick={handleSave}
@@ -95,16 +101,37 @@ export default function ProfileSettingsPage() {
             <div className="w-24 h-24 bg-[#FFC107] border-[3px] border-black flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <span className="font-black text-4xl text-black">{profile.avatar}</span>
             </div>
-            <button
-              onClick={() => {
-                const initial = prompt('Enter your initial (1 character):');
-                if (initial && initial.trim()) update('avatar', initial.trim().charAt(0).toUpperCase());
-              }}
-              className="absolute -bottom-2 -right-2 p-2 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[1px] active:translate-y-[1px] transition-all"
-              aria-label="Change avatar initial"
-            >
-              <Camera className="w-4 h-4 text-black" strokeWidth={2.5} />
-            </button>
+            {editingAvatar ? (
+              <div className="absolute -bottom-2 -right-2 flex items-center gap-1">
+                <input
+                  autoFocus
+                  maxLength={1}
+                  defaultValue={profile.avatar}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'Escape') {
+                      const v = (e.target as HTMLInputElement).value.trim();
+                      if (v) update('avatar', v.charAt(0).toUpperCase());
+                      setEditingAvatar(false);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v) update('avatar', v.charAt(0).toUpperCase());
+                    setEditingAvatar(false);
+                  }}
+                  className="w-10 h-10 text-center bg-white border-[3px] border-black font-black text-lg text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] outline-none uppercase"
+                  aria-label="Avatar initial"
+                />
+              </div>
+            ) : (
+              <button
+                onClick={() => setEditingAvatar(true)}
+                className="absolute -bottom-2 -right-2 p-2 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[1px] active:translate-y-[1px] transition-all"
+                aria-label="Change avatar initial"
+              >
+                <Camera className="w-4 h-4 text-black" strokeWidth={2.5} />
+              </button>
+            )}
           </div>
           <div className="text-center sm:text-left">
             <h3 className="font-black text-xl text-black">{profile.name}</h3>
