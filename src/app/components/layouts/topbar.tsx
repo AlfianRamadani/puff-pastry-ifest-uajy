@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { X, CheckSquare, Users, BookOpen, Clock, Search, Bell, Sparkles, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { X, CheckSquare, Users, BookOpen, Clock, Search, Bell, Sparkles, Settings, LogOut, ChevronDown, Zap } from 'lucide-react';
 
 const PAGE_TITLES: Record<string, { label: string; color: string }> = {
   '/dashboard': { label: 'DASHBOARD', color: 'bg-[#FFC107]' },
@@ -264,6 +264,19 @@ const TopBar = () => {
               </button>
             </div>
           </div>
+
+          {/* Brand */}
+          <div className="flex items-center gap-3 bg-[#FFC107] border-[3px] border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] cursor-pointer hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all mb-3">
+            <div className="bg-[#FFB3C1] border-2 border-black w-10 h-10 flex items-center justify-center">
+              <Zap className="w-6 h-6 text-black" strokeWidth={3} />
+            </div>
+            <div className="flex flex-col leading-tight flex-1">
+              <span className="font-black text-sm text-black tracking-wide">GRIT</span>
+              <span className="font-bold text-xs text-black/60">STUDY HUB</span>
+            </div>
+            <ChevronDown className="w-5 h-5 text-black" strokeWidth={3} />
+          </div>
+
           {/* Mobile Search */}
           <div className="relative">
             <div className="flex items-center bg-white border-[3px] border-black px-3 py-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
