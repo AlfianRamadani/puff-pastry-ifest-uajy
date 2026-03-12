@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BookOpen, CheckCircle, Clock, Flame, TrendingUp, Calendar, Star, ArrowRight } from "lucide-react";
 
 // === TAMBAHAN: IMPORT KALENDER ===
-import CustomCalendar from "../../components/landing/Calendar"; 
+import CustomCalendar from "../../components/landing/Calendar";
 
 const STATS = [
   { label: "Tasks Done", value: "12", sub: "this week", icon: CheckCircle, bg: "bg-[#B3FFB3]" },
@@ -35,7 +35,7 @@ export default function Home() {
       {/* Hero Greeting */}
       <div className="bg-[#FFC107] border-[3px] border-black p-5 sm:p-6 lg:p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="font-black text-[10px] sm:text-xs uppercase tracking-widest text-black/60 mb-1">{greeting}</p>
             <h1 className="font-black text-xl sm:text-2xl lg:text-3xl text-black uppercase tracking-wide leading-tight">
               Welcome back, Alfian! 👋
@@ -61,9 +61,10 @@ export default function Home() {
             key={stat.label}
             className={`${stat.bg} border-[2px] sm:border-[3px] border-black p-3 sm:p-4 lg:p-5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}
           >
-            <div className="flex items-center gap-1.5 sm:gap-2 mb-2">
-              <stat.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black shrink-0" strokeWidth={2.5} />
-              <span className="font-black text-[10px] sm:text-xs text-black uppercase tracking-wide truncate">{stat.label}</span>
+            <div className="flex items-start gap-1.5 sm:gap-2 mb-2">
+              <stat.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black shrink-0 mt-0.5" strokeWidth={2.5} />
+              {/* FIX: truncate diganti wrap agar label tidak terpotong */}
+              <span className="font-black text-[10px] sm:text-xs text-black uppercase tracking-wide leading-tight break-words">{stat.label}</span>
             </div>
             <p className="font-black text-2xl sm:text-3xl lg:text-4xl text-black leading-none">
               {stat.value}
@@ -73,34 +74,34 @@ export default function Home() {
         ))}
       </div>
 
-      {/* =========================================
-          MAIN CONTENT GRID (Kiri: List, Kanan: Kalender)
-          ========================================= */}
+      {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
-        
-        {/* KOLOM KIRI (7/12 Bagian Layar di XL, 100% di bawahnya): Berisi Tugas dan Kelas */}
+
+        {/* Kolom Kiri */}
         <div className="xl:col-span-7 flex flex-col gap-4 sm:gap-6">
-          
+
           {/* Upcoming Deadlines */}
           <div className="border-[2px] sm:border-[3px] border-black bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col h-full">
             <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b-[2px] sm:border-b-[3px] border-black bg-[#B3D4FF]">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-black" strokeWidth={2.5} />
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-black shrink-0" strokeWidth={2.5} />
                 <h2 className="font-black text-xs sm:text-sm text-black uppercase tracking-wide">Upcoming Deadlines</h2>
               </div>
-              <span className="font-black text-[10px] sm:text-xs text-black/60">{UPCOMING.length} tasks</span>
+              <span className="font-black text-[10px] sm:text-xs text-black/60 shrink-0 ml-2">{UPCOMING.length} tasks</span>
             </div>
             <div className="flex-1">
               {UPCOMING.map((item, i) => (
-                <div key={item.task} className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-4 ${i < UPCOMING.length - 1 ? 'border-b-2 border-black' : ''}`}>
-                  <div className="flex items-start sm:items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
-                    <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${item.color} border-2 border-black shrink-0 mt-1 sm:mt-0`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-xs sm:text-sm text-black truncate">{item.task}</p>
-                      <p className="font-bold text-[10px] sm:text-xs text-gray-500">{item.due}</p>
-                    </div>
+                <div
+                  key={item.task}
+                  className={`flex items-start gap-3 px-4 sm:px-5 py-3 sm:py-4 ${i < UPCOMING.length - 1 ? 'border-b-2 border-black' : ''}`}
+                >
+                  <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${item.color} border-2 border-black shrink-0 mt-1`} />
+                  {/* FIX: teks task tidak di-truncate, biarkan wrap */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-xs sm:text-sm text-black leading-snug">{item.task}</p>
+                    <p className="font-bold text-[10px] sm:text-xs text-gray-500 mt-0.5">{item.due}</p>
                   </div>
-                  <span className={`self-start sm:self-auto px-2 py-0.5 ${item.color} border-2 border-black font-black text-[10px] sm:text-xs uppercase shrink-0`}>
+                  <span className={`shrink-0 px-2 py-0.5 ${item.color} border-2 border-black font-black text-[10px] sm:text-xs uppercase`}>
                     {item.priority}
                   </span>
                 </div>
@@ -117,10 +118,10 @@ export default function Home() {
           <div className="border-[2px] sm:border-[3px] border-black bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col h-full">
             <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b-[2px] sm:border-b-[3px] border-black bg-[#B3FFB3]">
               <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-black" strokeWidth={2.5} />
+                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-black shrink-0" strokeWidth={2.5} />
                 <h2 className="font-black text-xs sm:text-sm text-black uppercase tracking-wide">Course Overview</h2>
               </div>
-              <span className="font-black text-[10px] sm:text-xs text-black/60">{COURSES.length} active</span>
+              <span className="font-black text-[10px] sm:text-xs text-black/60 shrink-0 ml-2">{COURSES.length} active</span>
             </div>
             <div className="flex-1">
               {COURSES.map((course, i) => (
@@ -128,8 +129,9 @@ export default function Home() {
                   <div className={`w-8 h-8 sm:w-10 sm:h-10 ${course.color} border-2 border-black flex items-center justify-center shrink-0`}>
                     <span className="font-black text-xs sm:text-sm text-black">{course.credits}</span>
                   </div>
+                  {/* FIX: truncate dihapus, nama course bisa wrap */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-xs sm:text-sm text-black truncate">{course.name}</p>
+                    <p className="font-bold text-xs sm:text-sm text-black leading-snug">{course.name}</p>
                     <p className="font-bold text-[10px] sm:text-xs text-gray-500">{course.credits} Credits</p>
                   </div>
                   <span className="px-2 sm:px-3 py-1 bg-[#FFC107] border-2 border-black font-black text-xs sm:text-sm text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] shrink-0">
@@ -147,7 +149,7 @@ export default function Home() {
 
         </div>
 
-        {/* KOLOM KANAN (5/12 Bagian Layar di XL): Khusus Kalender */}
+        {/* Kolom Kanan: Kalender */}
         <div className="xl:col-span-5 h-full mt-4 xl:mt-0">
           <div className="h-full">
             <CustomCalendar />
@@ -164,7 +166,7 @@ export default function Home() {
         </p>
         <p className="font-bold text-xs sm:text-sm text-white/70 mt-1 sm:mt-2">— Steve Jobs</p>
       </div>
-      
+
     </div>
   );
 }
