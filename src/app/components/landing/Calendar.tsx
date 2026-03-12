@@ -24,7 +24,7 @@ const EventModal = ({ onClose, onSave, onDelete, initialData, selectedDate }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 w-screen h-screen">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-4 w-screen h-screen">
       <div className="bg-white border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm p-5 sm:p-6 animate-in zoom-in duration-200">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg sm:text-xl font-black uppercase text-black">
@@ -44,7 +44,7 @@ const EventModal = ({ onClose, onSave, onDelete, initialData, selectedDate }) =>
               placeholder="e.g. Physics Lab Report"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-[#EEF6F6] border-[2px] sm:border-[3px] border-black p-2 sm:p-3 font-bold text-sm outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:-translate-y-1 transition-all"
+              className="w-full bg-[#EEF6F6] border-[2px] sm:border-[3px] border-black p-2 sm:p-3 font-bold text-sm outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:-translate-y-1"
             />
           </div>
 
@@ -302,7 +302,7 @@ const CustomCalendar = () => {
     <div className="relative w-full h-full bg-white border-[2px] sm:border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-sans flex flex-col">
       
       {/* HEADER KALENDER */}
-      <div className="bg-[#EEF6F6] border-b-[2px] sm:border-b-[3px] border-black p-3 sm:p-4 flex items-center justify-between">
+      <div className="bg-[#FFB3C1] border-b-[2px] sm:border-b-[3px] border-black p-3 sm:p-4 flex items-center justify-between">
         <h2 className="text-base sm:text-xl font-black text-black tracking-wide uppercase truncate">
           {format(currentDate, 'MMMM yyyy')}
         </h2>
