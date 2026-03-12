@@ -1,85 +1,103 @@
-import React from 'react';
-import { Search, Bell, User, ArrowLeft, UserPlus, ChevronDown, Briefcase } from 'lucide-react';
+"use client";
 
-const TopBar = () => {
+import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { Search, Bell, Sparkles, X, Users, CheckSquare, PenLine } from 'lucide-react';
+
+const TopBar = ({ userName = "Herlambang" }) => {
+  const pathname = usePathname();
+  const initial = userName ? userName.charAt(0).toUpperCase() : "?";
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+
+  const pageConfigs = [
+    { name: 'DASHBOARD', href: '/', bgColor: 'bg-[#FFC107]', icon: Sparkles },
+    { name: 'FRIENDS', href: '/friends', bgColor: 'bg-[#8FFFE1]', icon: Users },
+    { name: 'TASKS', href: '/tasks', aliases: ['/testing'], bgColor: 'bg-[#B4F8C8]', icon: CheckSquare },
+    { name: 'NOTES', href: '/notes', bgColor: 'bg-[#FFA6D6]', icon: PenLine },
+  ];
+
+  // Mencari konfigurasi halaman yang sedang aktif berdasarkan URL
+  const activePage = pageConfigs.find(page => 
+    page.href === '/' 
+      ? pathname === '/' 
+      : pathname.startsWith(page.href) || 
+        (page.aliases && page.aliases.some(alias => pathname.startsWith(alias)))
+  ) || pageConfigs[0]; // Default ke Dashboard jika tidak ditemukan
+
+  const ActiveIcon = activePage.icon;
+
   return (
-    <nav className="w-full font-sans antialiased">
-      {/* =========================================
-          DESKTOP VIEW
-          ========================================= */}
-      <header className="hidden md:flex w-full bg-white border-b-[3px] border-black px-6 py-4 items-center justify-between">
+    <nav className="w-full h-16 md:h-20 bg-white border-b-[3px] border-black flex items-center justify-between font-sans antialiased relative z-20">
+      
+      {isMobileSearchOpen && (
+        <div className="absolute inset-0 z-30 bg-white flex items-center px-4 md:hidden">
+          <div className="flex-1 flex items-center bg-white border-[3px] border-black px-3 py-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <Search className="w-5 h-5 text-black mr-2 shrink-0" strokeWidth={3} />
+            <input
+              type="text"
+              autoFocus
+              placeholder="Search anything..."
+              className="bg-transparent outline-none w-full font-bold text-sm text-black placeholder:text-gray-400"
+            />
+          </div>
+          <button 
+            onClick={() => setIsMobileSearchOpen(false)}
+            className="ml-3 bg-[#FFC107] border-[3px] border-black p-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+          >
+            <X className="w-5 h-5 text-black" strokeWidth={3} />
+          </button>
+        </div>
+      )}
+
+      <div className={`flex items-center h-full ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
         
-        {/* Fluid Search Bar */}
-        <div className="flex-1 md:max-w-md lg:max-w-xl flex items-center bg-[#F4F8FA] border-2 border-black px-4 py-2 mr-10 transition-all">
+        {/* Menu Aktif (Warna, Ikon, dan Teks Berubah Otomatis) */}
+        <div className={`flex h-full items-center justify-center border-r-[3px] border-black px-4 lg:px-6 gap-0 xl:gap-3 transition-colors duration-300 ${activePage.bgColor}`}>
+          <ActiveIcon className="w-5 h-5 text-black shrink-0" strokeWidth={2.5} />
+          <span className="hidden xl:block font-black text-sm text-black tracking-wide uppercase">
+            {activePage.name}
+          </span>
+        </div>
+
+        {/* Search Bar Desktop */}
+        <div className="hidden md:flex ml-4 lg:ml-6 items-center bg-white border-[3px] border-black px-4 py-2 w-56 lg:w-80 xl:w-[400px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus-within:-translate-y-[1px] focus-within:-translate-x-[1px] transition-all">
           <Search className="w-5 h-5 text-black mr-3 shrink-0" strokeWidth={3} />
           <input
             type="text"
-            placeholder="FIND FRIENDS..."
-            className="bg-transparent outline-none w-full font-black text-sm text-black placeholder:text-[#5E6A78] tracking-wide"
+            placeholder="Search anything..."
+            className="bg-transparent outline-none w-full font-bold text-sm text-black placeholder:text-gray-400"
           />
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-4 shrink-0">
-          <button className="px-3 py-2 bg-white border-2 border-black font-black text-sm shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all">
-            EN / ID
-          </button>
-          <button className="p-2 bg-white border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] transition-all">
-            <Bell className="w-5 h-5" strokeWidth={2.5} />
-          </button>
-          <div className="w-10 h-10 bg-[#FFD1B3] border-2 border-black flex items-center justify-center shrink-0">
-            <div className="w-6 h-6 bg-white rounded-full border border-black flex items-center justify-center">
-              <User className="w-4 h-4" strokeWidth={2.5} />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* =========================================
-          MOBILE VIEW (Refined Proportions)
-          ========================================= */}
-      <div className="md:hidden w-full px-4 py-4">
-        {/* Floating Card Container */}
-        <div className="bg-white border-[3px] border-black p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-          
-          {/* Header Row */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <ArrowLeft className="w-7 h-7 text-black stroke-[2.5px] cursor-pointer" />
-              {/* Removed font-black, used font-semibold for a cleaner look */}
-              <h1 className="text-2xl font-semibold text-black tracking-tight uppercase">
-                Friends
-              </h1>
-            </div>
-            
-            {/* Reduced Yellow Add Friend Button */}
-            <div className="relative inline-block">
-              <div className="absolute inset-0 bg-black translate-x-[3px] translate-y-[3px]" />
-              <button className="relative bg-[#FFB800] border-[2.5px] border-black p-1.5 active:translate-x-[1.5px] active:translate-y-[1.5px] transition-transform">
-                <UserPlus className="w-5 h-5 text-black stroke-[2.5px]" />
-              </button>
-            </div>
-          </div>
-
-          {/* Workspace Selector */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-black translate-x-[4px] translate-y-[4px] rounded-2xl" />
-            <div className="relative w-full bg-white border-[3px] border-black rounded-2xl p-2.5 flex items-center justify-between active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer">
-              <div className="flex items-center gap-3">
-                {/* Scaled Icon Box */}
-                <div className="w-10 h-10 bg-[#8FFFE1] border-[2px] border-black rounded-xl flex items-center justify-center shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                  <Briefcase className="w-5 h-5 text-black" strokeWidth={2.5} />
-                </div>
-                <span className="font-bold text-black text-xs tracking-wide uppercase">
-                  Personal Workspace
-                </span>
-              </div>
-              <ChevronDown className="w-6 h-6 text-black stroke-[3px] mr-1" />
-            </div>
-          </div>
-
-        </div>
       </div>
+
+      <div className={`flex items-center gap-3 md:gap-4 pr-3 md:pr-6 shrink-0 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
+        
+        {/* Tombol Search Mobile */}
+        <button 
+          onClick={() => setIsMobileSearchOpen(true)}
+          className="md:hidden bg-white border-[2px] border-black p-1.5 hover:bg-gray-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer"
+        >
+          <Search className="w-4 h-4 text-black" strokeWidth={3} />
+        </button>
+
+        {/* Notifikasi */}
+        <button className="relative bg-[#A3C4FF] border-[2px] md:border-[3px] border-black p-1.5 md:p-2 hover:bg-[#8eb6f8] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer">
+          <Bell className="w-4 h-4 md:w-5 md:h-5 text-black" strokeWidth={2.5} />
+          <div className="absolute -top-1 -right-1 md:-top-1.5 md:-right-1.5 w-3 h-3 md:w-3.5 md:h-3.5 bg-red-500 border-[2px] md:border-[2px] border-black rounded-full" />
+        </button>
+
+        {/* Profil User */}
+        <button className="flex items-center bg-[#FFA6D6] border-[2px] md:border-[3px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer p-1 md:p-1.5 gap-0 lg:gap-3">
+          <div className="bg-[#FFC107] border-[2px] border-black w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-sm">
+            <span className="font-black text-xs md:text-sm text-black">{initial}</span>
+          </div>
+          <div className="hidden lg:flex pr-2 items-center justify-center">
+            <span className="font-black text-sm text-black tracking-wide uppercase">{userName}</span>
+          </div>
+        </button>
+
+      </div>
+      
     </nav>
   );
 };
