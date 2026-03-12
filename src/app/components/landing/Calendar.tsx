@@ -235,15 +235,14 @@ const CustomCalendar = () => {
 
   const calendarGrid = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(monthStart);
     const startDate = startOfWeek(monthStart, { weekStartsOn: 1 }); 
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
     const rows = [];
-    let days = [];
     let day = startDate;
 
-    while (day <= endDate) {
+    // KUNCI ANTI-NAIK-TURUN: Selalu paksa render tepat 6 baris (6 minggu x 7 hari = 42 hari)
+    for (let week = 0; week < 6; week++) {
+      let days = [];
       for (let i = 0; i < 7; i++) {
         const cloneDay = day;
         const formattedDate = format(cloneDay, "d");
@@ -259,8 +258,8 @@ const CustomCalendar = () => {
           <div 
             key={cloneDay.toString()} 
             onClick={() => isCurrentMonth && handleCellClick(cloneDay, currentEvent)}
-            className={`relative flex flex-col p-1 sm:p-2 min-h-[3.5rem] sm:min-h-[5rem] md:min-h-[6rem] transition-all cursor-pointer hover:-translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-              ${!isCurrentMonth ? 'text-gray-300 pointer-events-none' : 'text-black'}
+            className={`relative flex flex-col p-1 sm:p-2 min-h-[3.5rem] sm:min-h-[5rem] md:min-h-[6rem] transition-all 
+              ${!isCurrentMonth ? 'text-gray-300 pointer-events-none' : 'text-black cursor-pointer hover:-translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}
               ${isDayToday && !currentEvent ? 'bg-[#2D3748] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-[2px] sm:border-[3px] border-black' : ''}
               ${currentEvent ? `border-[2px] sm:border-[3px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${currentEvent.style}` : ''}
               ${!currentEvent && !isDayToday && isCurrentMonth ? 'border border-transparent hover:border-black' : ''}
@@ -288,15 +287,14 @@ const CustomCalendar = () => {
         day = addDays(day, 1);
       }
       rows.push(
-        <div className="grid grid-cols-7 gap-1 sm:gap-2 lg:gap-4 mb-1 sm:mb-2 lg:mb-4 w-full" key={day.toString()}>
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 lg:gap-4 mb-1 sm:mb-2 lg:mb-4 w-full" key={week}>
           {days}
         </div>
       );
-      days = [];
     }
     return rows;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDate, eventsByDate]); 
+  }, [currentDate, eventsByDate]);
 
   const currentMonthEvents = events.filter(e => isSameMonth(e.date, currentDate)).sort((a, b) => a.date - b.date);
 
@@ -304,10 +302,11 @@ const CustomCalendar = () => {
     <div className="relative w-full h-full bg-white border-[2px] sm:border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-sans flex flex-col">
       
       {/* HEADER KALENDER */}
-      <div className="bg-[#EEF6F6] border-b-[2px] sm:border-b-[3px] border-black p-3 sm:p-4 flex items-center justify-between sm:justify-start sm:gap-4">
+      <div className="bg-[#EEF6F6] border-b-[2px] sm:border-b-[3px] border-black p-3 sm:p-4 flex items-center justify-between">
         <h2 className="text-base sm:text-xl font-black text-black tracking-wide uppercase truncate">
           {format(currentDate, 'MMMM yyyy')}
         </h2>
+        {/* ... tombol panah ... */}
         <div className="flex gap-1.5 sm:gap-2 shrink-0">
           <button onClick={prevMonth} className="bg-white border-[2px] sm:border-[3px] border-black p-1 hover:bg-gray-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all">
             <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-black" strokeWidth={3} />
