@@ -86,7 +86,7 @@ const TopBar = () => {
   return (
     <nav className="w-full font-sans antialiased">
       {/* Desktop TopBar */}
-      <header className="hidden md:flex w-full bg-white border-b-[3px] border-black px-6 py-0 items-stretch">
+      <header className="hidden md:flex w-full bg-white border-b-[3px] border-t-0 border-black px-6 py-0 items-stretch">
         {/* Page Title */}
         <div className={`flex items-center gap-3 px-6 py-4 ${page.color} border-r-[3px] border-black -ml-6 mr-6`}>
           <Sparkles className="w-5 h-5 text-black" strokeWidth={2.5} />
