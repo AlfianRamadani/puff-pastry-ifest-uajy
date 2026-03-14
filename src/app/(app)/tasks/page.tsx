@@ -15,8 +15,8 @@ import {
   type Course,
 } from "@/app/components/tasks/courseData";
 
-// Import Gantt Calendar
 import GanttCalendar from "@/app/components/tasks/GanttCalendar"; 
+import PeakHoursSchedule from "@/app/components/tasks/PeakHoursSchedule";
 
 export default function TasksPage() {
   const [activeTab, setActiveTab] = useState<TabName>("MY TASKS");
@@ -38,6 +38,7 @@ export default function TasksPage() {
     <section className="space-y-6">
       <SubNavTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
+      {/* TAB 1: MY TASKS */}
       {activeTab === "MY TASKS" && (
         <div
           role="tabpanel"
@@ -45,34 +46,37 @@ export default function TasksPage() {
           aria-labelledby="tab-my-tasks"
           className="space-y-8" 
         >
-          {/* 1. TASK LIST DI ATAS */}
           <MyTasksTab />
-
-          {/* 2. GANTT CALENDAR DI BAWAH */}
           <GanttCalendar />
         </div>
       )}
 
-      {/* ... TAB LAINNYA TETAP SAMA ... */}
+      {/* TAB 2: ACADEMIC LOAD */}
       {activeTab === "ACADEMIC LOAD" && (
         <div
           role="tabpanel"
           id="panel-academic-load"
           aria-labelledby="tab-academic-load"
-          className="space-y-6"
+          className="space-y-6 sm:space-y-8" // Memberikan jarak yang rapi antar komponen
         >
           <SummaryCards totalSKS={getTotalSKS(courses)} courseCount={courses.length} />
           <CourseTable courses={courses} onDelete={handleDelete} onAdd={handleAdd} />
           <CourseCards courses={courses} onDelete={handleDelete} onAdd={handleAdd} />
+          
+          {/* === PEAK HOURS SCHEDULE DIPINDAH KE SINI === */}
+          {/* Tepat di bawah CourseCards sesuai permintaanmu */}
+          <PeakHoursSchedule />
         </div>
       )}
 
+      {/* TAB 3: BURNOUT ANALYSIS */}
       {activeTab === "BURNOUT ANALYSIS" && (
         <div
           role="tabpanel"
           id="panel-burnout-analysis"
           aria-labelledby="tab-burnout-analysis"
         >
+          {/* Kembali bersih, hanya berisi komponen Burnout */}
           <BurnoutAnalysisTab />
         </div>
       )}
