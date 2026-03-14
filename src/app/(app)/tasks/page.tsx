@@ -15,6 +15,9 @@ import {
   type Course,
 } from "@/app/components/tasks/courseData";
 
+// Import Gantt Calendar
+import GanttCalendar from "@/app/components/tasks/GanttCalendar"; 
+
 export default function TasksPage() {
   const [activeTab, setActiveTab] = useState<TabName>("MY TASKS");
   const [courses, setCourses] = useState<Course[]>([]);
@@ -40,11 +43,17 @@ export default function TasksPage() {
           role="tabpanel"
           id="panel-my-tasks"
           aria-labelledby="tab-my-tasks"
+          className="space-y-8" 
         >
+          {/* 1. TASK LIST DI ATAS */}
           <MyTasksTab />
+
+          {/* 2. GANTT CALENDAR DI BAWAH */}
+          <GanttCalendar />
         </div>
       )}
 
+      {/* ... TAB LAINNYA TETAP SAMA ... */}
       {activeTab === "ACADEMIC LOAD" && (
         <div
           role="tabpanel"
@@ -52,20 +61,9 @@ export default function TasksPage() {
           aria-labelledby="tab-academic-load"
           className="space-y-6"
         >
-          <SummaryCards
-            totalSKS={getTotalSKS(courses)}
-            courseCount={courses.length}
-          />
-          <CourseTable
-            courses={courses}
-            onDelete={handleDelete}
-            onAdd={handleAdd}
-          />
-          <CourseCards
-            courses={courses}
-            onDelete={handleDelete}
-            onAdd={handleAdd}
-          />
+          <SummaryCards totalSKS={getTotalSKS(courses)} courseCount={courses.length} />
+          <CourseTable courses={courses} onDelete={handleDelete} onAdd={handleAdd} />
+          <CourseCards courses={courses} onDelete={handleDelete} onAdd={handleAdd} />
         </div>
       )}
 
