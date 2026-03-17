@@ -2,8 +2,8 @@ Nama Website : GRIT
 Nama Tim: Puff Pastry
 Dengan Backend : YA
 Daftar Fitur Utama:
-1. Manajemen Tugas Mahasiswa: pembuatan, pengelolaan, dan pemantauan tugas secara real-time dengan dukungan subtask, recurring task, reminder, prioritisasi cerdas, serta tampilan list dan kanban.
-2. Perencanaan Akademik Terstruktur: pengelolaan mata kuliah dan jadwal belajar, analisis beban akademik (peak hours), target GPA/SKS, serta fitur impor/ekspor data akademik.
-3. Burnout Analysis dan Intervensi: pemantauan risiko burnout berbasis data tugas dan aktivitas, rekomendasi pencegahan, recovery plan, check-in harian, dan pelacakan efektivitas intervensi.
-4. Note-Taking dan Kolaborasi Belajar: pencatatan materi, pengelolaan konten catatan, serta fitur sosial pembelajaran melalui friend system, messaging, dan collaborative study session.
-5. Dashboard Produktivitas Terpadu: ringkasan progres belajar, deadline, notifikasi, kalender kegiatan, dan statistik utama untuk mendukung pengambilan keputusan belajar harian.
+1. Manajemen Tugas Mahasiswa: kelola tugas secara real-time dengan subtask, recurring task, reminder, prioritas adaptif, serta mode tampilan list dan kanban untuk alur kerja yang fleksibel.
+2. Perencanaan Akademik: atur mata kuliah dan jadwal belajar, pantau beban akademik (peak hours), tetapkan target GPA/SKS, serta lakukan impor dan ekspor data akademik.
+3. Burnout Analysis: analisis risiko burnout berbasis aktivitas, tampilkan tren dan faktor risiko, lalu berikan intervensi, check-in harian, dan recovery plan yang terukur.
+4. Note-Taking dan Kolaborasi: buat dan kelola catatan belajar, dukung berbagi konteks belajar melalui koneksi teman, messaging, dan sesi belajar bersama.
+5. Dashboard Produktivitas: sajikan ringkasan progres, deadline, notifikasi, kalender kegiatan, dan metrik utama dalam satu tampilan untuk membantu keputusan belajar harian.
