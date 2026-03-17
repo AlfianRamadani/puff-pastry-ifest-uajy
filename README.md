@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dokumentasi Proyek Web
 
-## Getting Started
+> Dokumentasi ini disusun untuk memenuhi kriteria evaluasi panitia penilai.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 📋 Informasi Utama
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sesuai dengan ketentuan yang berlaku, berikut adalah detail informasi proyek kami:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Nama Website** : GRIT
+- **Nama Tim** : Puff Pastry
+- **Dengan Backend** : YA
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+### ✨ Daftar Fitur Utama
 
-To learn more about Next.js, take a look at the following resources:
+Berikut adalah (Daftar Fitur Utama) yang terdapat pada aplikasi web ini untuk menunjang produktivitas:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Course & Deadline Overview** Menampilkan tiga daftar tugas dengan tenggat waktu terdekat secara otomatis berdasarkan data yang telah ditambahkan oleh pengguna.
+2. **Kalender Interaktif**  Tampilan kalender bulanan dengan penyorotan hari ini serta penanda visual untuk agenda atau jadwal spesifik.
+3. **Inisiasi Sesi Belajar Cepat** Fitur seleksi multikontak untuk membuat dan mengundang teman ke dalam ruang belajar bersama secara instan.
+4. **Jejaring Sosial & Komunikasi Akademik** Pengelolaan daftar teman dengan indikator ketersediaan real-time, dilengkapi ruang obrolan pesan instan, halaman profil analitik pengguna, serta fitur inisiasi sesi belajar kelompok secara langsung.
+5. **Manajemen Tugas Komprehensif** Sistem pengelolaan To-Do List yang dilengkapi dengan fitur pencarian, pengurutan, serta pelabelan status progres dan tingkat prioritas secara dinamis.
+6. **Visualisasi Kalender Gantt** Tampilan lini masa (timeline) interaktif untuk memetakan durasi proyek dan tugas jangka panjang dalam bentuk blok visual yang mudah dipantau.
+7. **Dasbor Beban Akademik** Sistem manajemen mata kuliah komprehensif yang dilengkapi dengan pelacakan target SKS/IPK dan visualisasi tabel jam sibuk (Peak Hours) mingguan untuk mencegah kelelahan akademik.
+8. **Analisis Risiko Burnout Cerdas** Sistem peringatan dini yang memvisualisasikan beban kelelahan mental selama 7 hari dan mengkalkulasi persentase dampak beban kerja dari setiap tugas secara spesifik (Workload Impact).
+9. **Note Taking Editor** Modul note-taking komprehensif yang dirancang untuk produktivitas, dilengkapi fitur penyematan elemen teks dinamis seperti header, blok kode, dan kutipan (blockquotes).
+---
