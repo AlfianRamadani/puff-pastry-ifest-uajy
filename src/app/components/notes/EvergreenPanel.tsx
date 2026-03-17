@@ -4,8 +4,8 @@ import type { Note, TagsMap } from "@/app/(app)/notes/page";
 interface EvergreenPanelProps {
     notes: Note[];
     tags: TagsMap;
-    activeNoteId: number;
-    onSelectNote: (id: number) => void;
+    activeNoteId: string;
+    onSelectNote: (id: string) => void;
 }
 
 export default function EvergreenPanel({ notes, tags, activeNoteId, onSelectNote }: EvergreenPanelProps) {

@@ -14,7 +14,22 @@ type ScheduleSlotRow = {
   start_time: string;
   end_time: string;
   room: string | null;
-  courses: {
+  courses:
+    | {
+        name: string;
+        color: string | null;
+        type: string | null;
+      }
+    | {
+        name: string;
+        color: string | null;
+        type: string | null;
+      }[]
+    | null;
+};
+
+type ScheduleSlot = Omit<ScheduleSlotRow, "courses"> & {
+  course: {
     name: string;
     color: string | null;
     type: string | null;
@@ -69,7 +84,7 @@ function colorByType(type: string | null): string {
 
 export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
   const { user } = useAuth();
-  const [slots, setSlots] = useState<ScheduleSlotRow[]>([]);
+  const [slots, setSlots] = useState<ScheduleSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savingSlot, setSavingSlot] = useState(false);
@@ -105,11 +120,14 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
     }
 
     setErrorMessage(null);
-    setSlots(((data as ScheduleSlotRow[] | null) ?? []).map((slot) => ({
-      ...slot,
-      start_time: normalizeClock(slot.start_time),
-      end_time: normalizeClock(slot.end_time),
-    })));
+    setSlots(
+      ((data as ScheduleSlotRow[] | null) ?? []).map((slot) => ({
+        ...slot,
+        course: Array.isArray(slot.courses) ? (slot.courses[0] ?? null) : slot.courses,
+        start_time: normalizeClock(slot.start_time),
+        end_time: normalizeClock(slot.end_time),
+      })),
+    );
   }, [user]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -178,117 +196,100 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
     [slots],
   );
 
+  const todayIndex = new Date().getDay();
+  const dayHeaders = DAYS.map((name, idx) => ({ id: idx + 1, name, isToday: todayIndex === (idx + 1 === 7 ? 0 : idx + 1) }));
+
   return (
-    <div className="w-full bg-[#EEF6F6] p-4 sm:p-6 border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl sm:text-3xl font-black text-black uppercase tracking-tighter">
-          Estimation of Peak Hours
-        </h2>
+    <div className="w-full bg-[#EEF6F6] p-4 sm:p-6 border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-sans">
+      <div className="mb-4 sm:mb-6 flex items-center justify-between">
+        <h2 className="text-xl sm:text-3xl font-black text-black uppercase tracking-tighter">Estimation of Peak Hours</h2>
         {loading && <span className="font-black text-xs uppercase text-black/60">Loading...</span>}
       </div>
 
-      {errorMessage && (
-        <div className="mb-4 border-2 border-black bg-[#FFB3C1] p-2 font-bold text-xs text-black">
-          {errorMessage}
-        </div>
-      )}
+      {errorMessage && <div className="mb-4 border-2 border-black bg-[#FFB3C1] p-2 font-bold text-xs">{errorMessage}</div>}
 
-      <div className="overflow-x-auto border-[3px] border-black bg-white">
-        <div className="min-w-[860px]">
-          <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))] border-b-[3px] border-black bg-gray-50">
-            <div className="border-r-[3px] border-black p-2" />
-            {DAYS.map((day) => (
-              <div key={day} className="border-r-[3px] last:border-r-0 border-black p-2 text-center font-black text-xs uppercase">
-                {day}
+      <div className="w-full overflow-x-auto bg-white border-[3px] border-black scrollbar-hide">
+        <div className="min-w-[750px]">
+          <div className="grid grid-cols-[70px_repeat(7,1fr)] border-b-[3px] border-black bg-white sticky top-0 z-20">
+            <div className="border-r-[3px] border-black p-2 bg-gray-100 sticky left-0 z-30" />
+            {dayHeaders.map((day) => (
+              <div key={day.id} className={`border-r-[3px] border-black last:border-r-0 p-2 flex flex-col items-center justify-center font-black text-xs sm:text-sm tracking-wide ${day.isToday ? "bg-[#FF4D4D] text-white" : "text-black bg-white"}`}>
+                <span>{day.name}</span>
+                {day.isToday && <span className="text-[8px] uppercase tracking-widest opacity-80 mt-0.5">Today</span>}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))]">
-            <div className="grid grid-rows-9 border-r-[3px] border-black">
-              {TIME_SLOTS.map((time) => (
-                <div key={time} className="h-14 border-b-[3px] last:border-b-0 border-black px-2 flex items-center font-black text-xs bg-gray-50">
-                  {time}
-                </div>
-              ))}
-            </div>
-
-            <div className="col-span-7 relative">
-              <div className="grid grid-cols-7 grid-rows-9">
-                {DAYS.map((_, dayIndex) =>
-                  TIME_SLOTS.map((time) => (
-                    <button
-                      key={`${dayIndex}-${time}`}
-                      onClick={() => openCreate(dayIndex, time)}
-                      className="h-14 border-b-[3px] border-r-[3px] last:border-r-0 border-black bg-white hover:bg-gray-50 transition-colors"
-                      aria-label={`Add slot on ${DAYS[dayIndex]} at ${time}`}
-                    />
-                  )),
-                )}
+          {TIME_SLOTS.map((time, idx) => (
+            <div key={time} className={`grid grid-cols-[70px_repeat(7,1fr)] ${idx !== TIME_SLOTS.length - 1 ? "border-b-[3px] border-black" : ""}`}>
+              <div className="border-r-[3px] border-black p-2 flex items-center justify-center font-black text-xs text-black bg-gray-50 sticky left-0 z-10 shadow-[2px_0px_0px_0px_rgba(0,0,0,0.1)]">
+                {time}
               </div>
 
-              <div className="pointer-events-none absolute inset-0 grid grid-cols-7 grid-rows-9">
-                {blocks.map((slot) => (
+              {dayHeaders.map((day) => {
+                const slot = blocks.find((block) => block.day_of_week === day.id - 1 && block.start_time === time);
+                const isBreakTime = time === "12:00";
+                return (
                   <div
-                    key={slot.id}
-                    style={{
-                      gridColumnStart: slot.day_of_week + 1,
-                      gridRowStart: slot.rowStart,
-                      gridRowEnd: slot.rowEnd,
-                    }}
-                    className={`pointer-events-auto m-1 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-2 ${colorByType(slot.courses?.type)}`}
+                    key={`${day.id}-${time}`}
+                    onClick={() => openCreate(day.id - 1, time)}
+                    className={`border-r-[3px] border-black last:border-r-0 p-1 flex items-center justify-center min-h-[45px] cursor-pointer transition-colors hover:bg-gray-100 ${isBreakTime && !slot ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#f3f4f6_5px,#f3f4f6_10px)]" : ""} ${day.isToday && !slot && !isBreakTime ? "bg-red-50/30" : ""}`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-black text-[10px] uppercase leading-tight">{slot.courses?.name ?? "Unknown"}</p>
-                        <p className="font-bold text-[10px] mt-1">{slot.start_time}–{slot.end_time}</p>
-                        {slot.room && <p className="font-bold text-[10px] mt-1">Room: {slot.room}</p>}
+                    {slot && (
+                      <div className={`w-full h-full flex flex-col items-center justify-center px-1 py-1 border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-[1px] transition-transform ${colorByType(slot.course?.type ?? null)}`}>
+                        <span className="font-black text-[9px] sm:text-[10px] text-black uppercase text-center leading-tight line-clamp-2">
+                          {slot.course?.name ?? "Unknown"}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void deleteSlot(slot.id);
+                          }}
+                          disabled={deletingId === slot.id}
+                          className="mt-1 w-4 h-4 border border-black bg-white text-[10px] font-black leading-none"
+                        >
+                          ×
+                        </button>
                       </div>
-                      <button
-                        onClick={() => void deleteSlot(slot.id)}
-                        disabled={deletingId === slot.id}
-                        className="w-5 h-5 flex items-center justify-center border-2 border-black bg-white font-black text-[10px]"
-                        aria-label="Delete slot"
-                      >
-                        ×
-                      </button>
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2"><span className="w-3 h-3 border border-black bg-[#FFC107]" /><span className="font-black text-[10px]">LECTURE</span></div>
-        <div className="flex items-center gap-2"><span className="w-3 h-3 border border-black bg-[#B3D4FF]" /><span className="font-black text-[10px]">ELECTIVE</span></div>
-        <div className="flex items-center gap-2"><span className="w-3 h-3 border border-black bg-[#5EEAD4]" /><span className="font-black text-[10px]">LAB</span></div>
-        <div className="flex items-center gap-2"><span className="w-3 h-3 border border-black bg-[#FFA6D6]" /><span className="font-black text-[10px]">SEMINAR</span></div>
+      <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-4 sm:mt-5 px-1">
+        {[{ label: "MAJOR COURSE", color: "bg-[#FFC107]" }, { label: "ELECTIVE", color: "bg-[#B3D4FF]" }, { label: "LAB / PRACTICUM", color: "bg-[#5EEAD4]" }, { label: "SEMINAR", color: "bg-[#FFA6D6]" }].map((item) => (
+          <div key={item.label} className="flex items-center gap-1.5">
+            <div className={`w-3 h-3 sm:w-4 sm:h-4 border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] ${item.color}`} />
+            <span className="font-black text-[9px] sm:text-xs text-black uppercase tracking-wide">{item.label}</span>
+          </div>
+        ))}
       </div>
 
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="w-full max-w-md border-[3px] border-black bg-white p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-black text-sm uppercase">Add Schedule Slot</h3>
+          <div className="bg-white border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm p-5 sm:p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-black uppercase text-black">Add Class</h3>
               <button
                 onClick={() => setShowForm(false)}
-                className="p-1 border-2 border-black bg-white"
+                className="hover:bg-red-100 p-1 border-2 border-transparent hover:border-black transition-all"
                 aria-label="Close form"
               >
                 <X className="w-4 h-4" strokeWidth={3} />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="block font-black text-[10px] uppercase mb-1">Course</label>
+                <label className="block text-xs font-black uppercase mb-1">Course</label>
                 <select
                   value={form.courseId}
                   onChange={(event) => setForm((prev) => ({ ...prev, courseId: event.target.value }))}
-                  className="w-full border-2 border-black px-2 py-2 font-bold text-sm"
+                  className="w-full bg-[#EEF6F6] border-[3px] border-black p-2 font-bold text-sm"
                 >
                   {courses.length === 0 ? (
                     <option value="">No courses available</option>
@@ -302,11 +303,11 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
 
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="block font-black text-[10px] uppercase mb-1">Day</label>
+                  <label className="block text-xs font-black uppercase mb-1">Day</label>
                   <select
                     value={form.dayOfWeek}
                     onChange={(event) => setForm((prev) => ({ ...prev, dayOfWeek: Number(event.target.value) }))}
-                    className="w-full border-2 border-black px-2 py-2 font-bold text-sm"
+                    className="w-full bg-white border-[2px] border-black p-2 font-bold text-sm"
                   >
                     {DAYS.map((day, index) => (
                       <option key={day} value={index}>{day}</option>
@@ -314,45 +315,47 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-black text-[10px] uppercase mb-1">Start</label>
+                  <label className="block text-xs font-black uppercase mb-1">Start</label>
                   <input
                     type="time"
                     value={form.startTime}
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, startTime: event.target.value, endTime: addOneHour(event.target.value) }))
                     }
-                    className="w-full border-2 border-black px-2 py-2 font-bold text-sm"
+                    className="w-full bg-white border-[2px] border-black p-2 font-bold text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block font-black text-[10px] uppercase mb-1">End</label>
+                  <label className="block text-xs font-black uppercase mb-1">End</label>
                   <input
                     type="time"
                     value={form.endTime}
                     onChange={(event) => setForm((prev) => ({ ...prev, endTime: event.target.value }))}
-                    className="w-full border-2 border-black px-2 py-2 font-bold text-sm"
+                    className="w-full bg-white border-[2px] border-black p-2 font-bold text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-black text-[10px] uppercase mb-1">Room (optional)</label>
+                <label className="block text-xs font-black uppercase mb-1">Room</label>
                 <input
                   type="text"
                   value={form.room}
                   onChange={(event) => setForm((prev) => ({ ...prev, room: event.target.value }))}
-                  className="w-full border-2 border-black px-2 py-2 font-bold text-sm"
+                  className="w-full bg-white border-[2px] border-black p-2 font-bold text-sm"
                 />
               </div>
             </div>
 
-            <button
-              onClick={() => void saveSlot()}
-              disabled={savingSlot || courses.length === 0}
-              className="mt-4 w-full border-[3px] border-black bg-[#B3FFB3] py-2 font-black text-xs uppercase disabled:opacity-60"
-            >
-              {savingSlot ? "Saving..." : "Save Slot"}
-            </button>
+            <div className="mt-4">
+              <button
+                onClick={() => void saveSlot()}
+                disabled={savingSlot || courses.length === 0}
+                className="w-full bg-[#B3FFB3] border-[3px] border-black p-2 font-black text-sm uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] disabled:opacity-60"
+              >
+                {savingSlot ? "Saving..." : "Add to Schedule"}
+              </button>
+            </div>
           </div>
         </div>
       )}

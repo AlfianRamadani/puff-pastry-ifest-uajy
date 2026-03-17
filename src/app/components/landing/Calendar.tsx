@@ -2,23 +2,63 @@
 
 import React, { useState, useMemo } from 'react';
 import { 
-  format, addMonths, subMonths, startOfMonth, endOfMonth, 
-  startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays, isToday 
+  format, addMonths, subMonths, startOfMonth,
+  startOfWeek, isSameMonth, addDays, isToday 
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Trash2 } from 'lucide-react';
+
+type ColorTheme = "yellow" | "mint" | "pink" | "blue";
+
+type CalendarEvent = {
+  id: number;
+  date: Date;
+  title: string;
+  time: string;
+  location: string;
+  style: string;
+  tagStyle: string;
+  tagText: string;
+  hasNotification: boolean;
+};
+
+type ModalFormData = {
+  title: string;
+  time: string;
+  location: string;
+  colorTheme: ColorTheme;
+};
+
+type ModalState = {
+  isOpen: boolean;
+  selectedDate: Date;
+  editingEventId: number | null;
+  initialData: ModalFormData | null;
+};
 
 // =========================================
 // KOMPONEN MODAL TERPISAH (KUNCI ANTI-LAG)
 // Karena state ketikan ada di sini, kalender utama tidak akan ikut re-render!
 // =========================================
-const EventModal = ({ onClose, onSave, onDelete, initialData, selectedDate }) => {
+const EventModal = ({
+  onClose,
+  onSave,
+  onDelete,
+  initialData,
+  selectedDate,
+}: {
+  onClose: () => void;
+  onSave: (data: ModalFormData) => void;
+  onDelete: () => void;
+  initialData: ModalFormData | null;
+  selectedDate: Date;
+}) => {
   // State form terisolasi di dalam Modal
   const [title, setTitle] = useState(initialData ? initialData.title : '');
   const [time, setTime] = useState(initialData ? initialData.time : '');
   const [location, setLocation] = useState(initialData ? initialData.location : '');
   const [colorTheme, setColorTheme] = useState(initialData ? initialData.colorTheme : 'yellow');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({ title, time, location, colorTheme });
   };
@@ -75,7 +115,7 @@ const EventModal = ({ onClose, onSave, onDelete, initialData, selectedDate }) =>
           <div>
             <label className="block text-[10px] sm:text-xs font-black uppercase mb-2">Color Label</label>
             <div className="flex gap-2 sm:gap-3">
-              {['yellow', 'mint', 'pink', 'blue'].map((color) => (
+              {(['yellow', 'mint', 'pink', 'blue'] as const).map((color) => (
                 <div 
                   key={color}
                   onClick={() => setColorTheme(color)}
@@ -118,7 +158,7 @@ const EventModal = ({ onClose, onSave, onDelete, initialData, selectedDate }) =>
 const CustomCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  const [events, setEvents] = useState([
+  const [events, setEvents] = useState<CalendarEvent[]>([
     {
       id: 1,
       date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 7), 
@@ -143,9 +183,9 @@ const CustomCalendar = () => {
     }
   ]);
 
-  const [modalState, setModalState] = useState({
+  const [modalState, setModalState] = useState<ModalState>({
     isOpen: false,
-    selectedDate: null,
+    selectedDate: new Date(),
     editingEventId: null,
     initialData: null
   });
@@ -157,8 +197,8 @@ const CustomCalendar = () => {
     blue: { style: 'bg-[#A3C4FF]', tagStyle: 'bg-white text-black' }
   };
 
-  const eventsByDate = useMemo(() => {
-    const dict = {};
+  const eventsByDate = useMemo<Record<string, CalendarEvent[]>>(() => {
+    const dict: Record<string, CalendarEvent[]> = {};
     events.forEach(ev => {
       const dateStr = format(ev.date, 'yyyy-MM-dd');
       if (!dict[dateStr]) dict[dateStr] = [];
@@ -170,9 +210,9 @@ const CustomCalendar = () => {
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
 
-  const handleCellClick = (day, existingEvent) => {
+  const handleCellClick = (day: Date, existingEvent: CalendarEvent | null) => {
     if (existingEvent) {
-      let themeKey = 'yellow';
+      let themeKey: ColorTheme = 'yellow';
       if (existingEvent.style.includes('5EEAD4')) themeKey = 'mint';
       if (existingEvent.style.includes('FFA6D6')) themeKey = 'pink';
       if (existingEvent.style.includes('A3C4FF')) themeKey = 'blue';
@@ -198,7 +238,7 @@ const CustomCalendar = () => {
     }
   };
 
-  const handleSaveEvent = (eventData) => {
+  const handleSaveEvent = (eventData: ModalFormData) => {
     const theme = themeOptions[eventData.colorTheme];
     
     if (modalState.editingEventId) {
@@ -212,7 +252,7 @@ const CustomCalendar = () => {
         tagText: eventData.title.substring(0, 8).toUpperCase(),
       } : ev));
     } else {
-      const newEntry = {
+      const newEntry: CalendarEvent = {
         id: Date.now(),
         date: modalState.selectedDate,
         title: eventData.title,
@@ -296,7 +336,9 @@ const CustomCalendar = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate, eventsByDate]);
 
-  const currentMonthEvents = events.filter(e => isSameMonth(e.date, currentDate)).sort((a, b) => a.date - b.date);
+  const currentMonthEvents = events
+    .filter((e) => isSameMonth(e.date, currentDate))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
 
   return (
     <div className="relative w-full h-full bg-white border-[2px] sm:border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-sans flex flex-col">

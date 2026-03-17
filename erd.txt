@@ -1,0 +1,183 @@
+// GRIT Study Hub — ERD (dbdiagram.io format)
+// Paste this at https://dbdiagram.io/d
+
+Table profiles {
+  id uuid [pk, note: "References auth.users.id from Supabase Auth"]
+  full_name varchar
+  email varchar [unique, not null]
+  bio text
+  avatar_url varchar
+  university varchar
+  major varchar
+  daily_study_goal_hours int [default: 4]
+  preferred_study_time varchar [note: "morning | afternoon | evening | night"]
+  current_gpa decimal
+  target_gpa decimal [default: 3.85]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz
+}
+
+Table courses {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  name varchar [not null]
+  type varchar [note: "lecture | lab | seminar | elective"]
+  credits int [not null]
+  grade varchar [note: "A, A-, B+, B, etc."]
+  color varchar [note: "hex color for calendar display"]
+  semester varchar [note: "e.g. 2026-1"]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz
+}
+
+Table schedule_slots {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  course_id uuid [ref: > courses.id]
+  day_of_week int [note: "0=Mon, 1=Tue, ..., 6=Sun"]
+  start_time time [not null]
+  end_time time [not null]
+  room varchar
+  created_at timestamptz [default: `now()`]
+}
+
+Table tasks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  course_id uuid [ref: > courses.id, note: "nullable — links task to a course"]
+  title varchar [not null]
+  priority varchar [note: "high | medium | low"]
+  status varchar [note: "not_started | in_progress | done | overdue"]
+  due_date date
+  workload_impact int [note: "0-100, used for burnout calculation"]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz
+}
+
+Table study_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  course_id uuid [ref: > courses.id]
+  session_id uuid [ref: > study_sessions.id, note: "nullable — if logged from a session"]
+  duration_minutes int [not null]
+  logged_date date [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Table streaks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [unique, not null, ref: - profiles.id]
+  current_streak int [default: 0]
+  longest_streak int [default: 0]
+  last_study_date date
+  updated_at timestamptz
+}
+
+Table burnout_snapshots {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  probability decimal [note: "0.0 - 100.0"]
+  workload_intensity decimal [note: "0.0 - 10.0"]
+  active_tasks_count int
+  snapshot_date date [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Table calendar_events {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  course_id uuid [ref: > courses.id]
+  title varchar [not null]
+  event_date date [not null]
+  event_time time
+  location varchar
+  type varchar [note: "exam | homework | lab | seminar | other"]
+  created_at timestamptz [default: `now()`]
+}
+
+Table friendships {
+  id uuid [pk, default: `gen_random_uuid()`]
+  requester_id uuid [not null, ref: > profiles.id]
+  addressee_id uuid [not null, ref: > profiles.id]
+  status varchar [not null, note: "pending | accepted | rejected | blocked"]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz
+}
+
+Table messages {
+  id uuid [pk, default: `gen_random_uuid()`]
+  sender_id uuid [not null, ref: > profiles.id]
+  receiver_id uuid [not null, ref: > profiles.id]
+  content text [not null]
+  is_read boolean [default: false]
+  created_at timestamptz [default: `now()`]
+}
+
+Table study_sessions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  host_id uuid [not null, ref: > profiles.id]
+  title varchar
+  subject varchar [note: "e.g. Maths, UI Design — what they're studying"]
+  status varchar [note: "active | ended"]
+  started_at timestamptz
+  ended_at timestamptz
+  created_at timestamptz [default: `now()`]
+}
+
+Table study_session_participants {
+  id uuid [pk, default: `gen_random_uuid()`]
+  session_id uuid [not null, ref: > study_sessions.id]
+  user_id uuid [not null, ref: > profiles.id]
+  joined_at timestamptz [default: `now()`]
+  left_at timestamptz
+}
+
+Table notes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  title varchar [not null]
+  slug varchar [not null]
+  source varchar [note: "book/reference name"]
+  tags jsonb [note: "array of tag strings e.g. [evergreen, draft]"]
+  folder varchar [note: "e.g. ideas, study-space"]
+  is_shared boolean [default: false]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz
+}
+
+Table note_sections {
+  id uuid [pk, default: `gen_random_uuid()`]
+  note_id uuid [not null, ref: > notes.id]
+  type varchar [note: "heading | paragraph | quote | code | table | graph"]
+  content jsonb [not null]
+  order_index int [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Table note_collaborators {
+  id uuid [pk, default: `gen_random_uuid()`]
+  note_id uuid [not null, ref: > notes.id]
+  user_id uuid [not null, ref: > profiles.id]
+  permission varchar [note: "view | edit"]
+  created_at timestamptz [default: `now()`]
+}
+
+Table notifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  type varchar [note: "task_due | friend_request | session_invite | message | streak"]
+  title varchar [not null]
+  body text
+  is_read boolean [default: false]
+  reference_id uuid [note: "nullable — id of task/message/session etc."]
+  reference_type varchar [note: "task | message | session | friendship"]
+  created_at timestamptz [default: `now()`]
+}
+
+Table user_presence {
+  user_id uuid [pk, ref: - profiles.id]
+  status varchar [note: "online | in_session | offline"]
+  current_activity varchar [note: "e.g. UI Design, Data Structures"]
+  last_seen timestamptz
+  updated_at timestamptz
+}

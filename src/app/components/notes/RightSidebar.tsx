@@ -10,10 +10,10 @@ interface Tab { id: TabId; label: string; }
 interface RightSidebarProps {
     notes: Note[];
     tags: TagsMap;
-    activeNoteId: number;
-    onSelectNote: (id: number) => void;
+    activeNoteId: string;
+    onSelectNote: (id: string) => void;
     onAddNote: (title: string) => void;
-    onDeleteNote: (id: number) => void;
+    onDeleteNote: (id: string) => void;
 }
 
 const TABS: Tab[] = [

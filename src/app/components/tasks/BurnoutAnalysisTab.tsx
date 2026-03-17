@@ -127,8 +127,6 @@ export default function BurnoutAnalysisTab() {
   const [deadlineUrgency, setDeadlineUrgency] = useState<DeadlineUrgency>("LOW");
   const [workloadIntensity, setWorkloadIntensity] = useState(0);
   const [reportLoading, setReportLoading] = useState(false);
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportData, setReportData] = useState<BurnoutReport | null>(null);
 
   const loadBurnoutData = useCallback(async () => {
     if (!user) {
@@ -273,21 +271,39 @@ export default function BurnoutAnalysisTab() {
     }
 
     const payload = data as Partial<BurnoutReport> | null;
-    setReportData({
+    const report = {
       summary: payload?.summary ?? "No summary returned.",
       riskLevel: payload?.riskLevel ?? "MODERATE",
       recommendations: payload?.recommendations ?? [],
-    });
-    setReportModalOpen(true);
-  }, [user]);
+    };
 
-  const handlePrintReport = useCallback(() => {
-    document.body.classList.add("print-burnout-report");
-    window.print();
-    window.setTimeout(() => {
-      document.body.classList.remove("print-burnout-report");
-    }, 300);
-  }, []);
+    const lines = [
+      "BURNOUT ANALYSIS REPORT",
+      `Generated: ${new Date().toLocaleString()}`,
+      "=".repeat(40),
+      "",
+      "SUMMARY",
+      report.summary,
+      "",
+      `RISK LEVEL: ${report.riskLevel}`,
+      "",
+      "RECOMMENDATIONS",
+      ...(report.recommendations.length > 0 ? report.recommendations.map((item, idx) => `${idx + 1}. ${item}`) : ["No recommendations returned."]),
+      "",
+      "7-DAY TREND",
+      ...trend.map((t) => `  ${t.day}: ${t.probability}%`),
+      "",
+      "WORKLOAD IMPACT",
+      ...metrics.map((m) => `  [${m.riskLevel}] ${m.taskName} — ${m.contribution}%`),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "burnout-report.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [metrics, trend, user]);
 
   const deadlineSubtext = useMemo(() => {
     if (deadlineUrgency === "HIGH") return "Many Due Soon";
@@ -413,58 +429,6 @@ export default function BurnoutAnalysisTab() {
         {reportLoading ? "Generating..." : "Generate Report"}
       </button>
 
-      {reportModalOpen && reportData && (
-        <div className="fixed inset-0 z-50 bg-black/60 p-4 flex items-center justify-center">
-          <div
-            data-print-burnout-report
-            className="w-full max-w-2xl border-[3px] border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h4 className="font-black text-lg uppercase">Burnout AI Report</h4>
-                <p className="font-bold text-xs mt-1">Risk Level: {reportData.riskLevel}</p>
-              </div>
-              <button
-                onClick={() => setReportModalOpen(false)}
-                className="border-2 border-black px-2 py-1 font-black text-[10px] uppercase"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="font-black text-xs uppercase mb-2">Summary</p>
-                <p className="font-bold text-sm leading-6">{reportData.summary}</p>
-              </div>
-
-              <div>
-                <p className="font-black text-xs uppercase mb-2">Recommendations</p>
-                {reportData.recommendations.length === 0 ? (
-                  <p className="font-bold text-sm">No recommendation items returned.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {reportData.recommendations.map((item, index) => (
-                      <li key={`${item}-${index}`} className="font-bold text-sm">
-                        {index + 1}. {item}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-5 flex items-center gap-2">
-              <button
-                onClick={handlePrintReport}
-                className="px-4 py-2 border-[3px] border-black bg-[#B3FFB3] font-black text-xs uppercase"
-              >
-                Download as PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

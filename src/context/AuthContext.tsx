@@ -95,32 +95,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!mounted || error) {
+          return;
+        }
 
-      if (!mounted || error) {
+        const currentSession = data.session;
+        const currentUser = currentSession?.user ?? null;
+
+        setSession(currentSession);
+        setUser(currentUser);
+        setLoading(false);
+
+        if (currentUser) {
+          const profileData = await fetchProfile(currentUser.id);
+          if (mounted) {
+            setProfile(profileData);
+          }
+        } else {
+          setProfile(null);
+        }
+      } finally {
         if (mounted) {
           setLoading(false);
         }
-        return;
-      }
-
-      const currentSession = data.session;
-      const currentUser = currentSession?.user ?? null;
-
-      setSession(currentSession);
-      setUser(currentUser);
-
-      if (currentUser) {
-        const profileData = await fetchProfile(currentUser.id);
-        if (mounted) {
-          setProfile(profileData);
-        }
-      } else {
-        setProfile(null);
-      }
-
-      if (mounted) {
-        setLoading(false);
       }
     };
 
@@ -133,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const nextUser = nextSession?.user ?? null;
         setSession(nextSession);
         setUser(nextUser);
+        setLoading(false);
 
         if (event === "SIGNED_IN" && nextUser) {
           const profileData = await fetchProfile(nextUser.id);
@@ -144,8 +144,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === "SIGNED_OUT") {
           setProfile(null);
         }
-
-        setLoading(false);
       },
     );
 
@@ -193,7 +191,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refreshUnreadNotifications();
 
     const channel = supabase

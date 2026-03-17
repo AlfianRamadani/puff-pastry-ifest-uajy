@@ -4,7 +4,7 @@ import type { Note } from "@/app/(app)/notes/page";
 interface TopNavProps {
     breadcrumb: string[];
     activeNote: Note | null;
-    onDeleteNote: (id: number) => void;
+    onDeleteNote: (id: string) => void;
     onToggleSidebar: () => void;
     sidebarOpen: boolean;
 }

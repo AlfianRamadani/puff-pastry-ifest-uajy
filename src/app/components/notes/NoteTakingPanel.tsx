@@ -4,10 +4,10 @@ import type { Note } from "@/app/(app)/notes/page";
 
 interface NoteTakingPanelProps {
     notes: Note[];
-    activeNoteId: number;
-    onSelectNote: (id: number) => void;
+    activeNoteId: string;
+    onSelectNote: (id: string) => void;
     onAddNote: (title: string) => void;
-    onDeleteNote: (id: number) => void;
+    onDeleteNote: (id: string) => void;
 }
 
 export default function NoteTakingPanel({ notes, activeNoteId, onSelectNote, onAddNote, onDeleteNote }: NoteTakingPanelProps) {
