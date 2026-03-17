@@ -3,7 +3,6 @@
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/lib/supabase";
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -11,16 +10,10 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { loading, user } = useAuth();
 
   useEffect(() => {
-    const verifySession = async () => {
-      if (loading) return;
-      const { data } = await supabase.auth.getSession();
-      const hasSession = Boolean(data.session);
-      if (!user && !hasSession) {
-        router.replace("/login");
-      }
-    };
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void verifySession();
+    if (loading) return;
+    if (!user) {
+      router.replace("/login");
+    }
   }, [loading, router, user, pathname]);
 
   if (loading) {
@@ -33,7 +26,15 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FFF9F0]">
+        <div className="border-[3px] border-black bg-white px-6 py-3 font-black text-sm uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          Restoring session...
+        </div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }

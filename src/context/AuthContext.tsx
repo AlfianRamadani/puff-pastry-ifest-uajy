@@ -89,18 +89,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  const reconcileAuth = useCallback(async () => {
+    const [{ data: sessionData }, { data: userData }] = await Promise.all([
+      supabase.auth.getSession(),
+      supabase.auth.getUser(),
+    ]);
+    const reconciledSession = sessionData.session ?? null;
+    const reconciledUser = userData.user ?? reconciledSession?.user ?? null;
+    setSession(reconciledSession);
+    setUser(reconciledUser);
+    if (reconciledUser) {
+      const profileData = await fetchProfile(reconciledUser.id);
+      setProfile(profileData);
+    }
+    return { reconciledSession, reconciledUser };
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
     const initSession = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-        if (!mounted || error) {
+        const [{ data: sessionData, error: sessionError }, { data: userData }] = await Promise.all([supabase.auth.getSession(), supabase.auth.getUser()]);
+        if (!mounted) {
           return;
         }
 
-        const currentSession = data.session;
-        const currentUser = currentSession?.user ?? null;
+        const currentSession = sessionError ? null : sessionData.session;
+        const currentUser = userData.user ?? currentSession?.user ?? null;
 
         setSession(currentSession);
         setUser(currentUser);
@@ -123,16 +139,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void initSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, nextSession) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
         if (!mounted) return;
 
-        const nextUser = nextSession?.user ?? null;
+        let nextUser = nextSession?.user ?? null;
+        if (!nextUser) {
+          const { data: userData } = await supabase.auth.getUser();
+          nextUser = userData.user ?? null;
+        }
         setSession(nextSession);
         setUser(nextUser);
         setLoading(false);
 
-        if (event === "SIGNED_IN" && nextUser) {
+        if (nextUser) {
           const profileData = await fetchProfile(nextUser.id);
           if (mounted) {
             setProfile(profileData);
@@ -142,14 +161,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === "SIGNED_OUT") {
           setProfile(null);
         }
-      },
-    );
+      });
 
     return () => {
       mounted = false;
       authListener.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (loading || user) return;
+    let cancelled = false;
+
+    const run = async () => {
+      const attempts = [0, 250, 700, 1500];
+      for (const delay of attempts) {
+        if (cancelled) return;
+        if (delay > 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, delay));
+        }
+        const { reconciledUser } = await reconcileAuth();
+        if (cancelled) return;
+        if (reconciledUser) return;
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, reconcileAuth, user]);
 
   useEffect(() => {
     if (!user) return;
