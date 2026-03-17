@@ -1,18 +1,17 @@
 "use client";
 
-import React from "react";
 import { Trash2, Plus } from "lucide-react";
 import type { Course } from "./courseData";
 import { useCourseForm } from "./useCourseForm";
 
 interface CourseCardsProps {
   courses: Course[];
-  onDelete: (id: string) => void;
-  onAdd: (course: Omit<Course, "id">) => void;
+  onDelete: (id: string) => Promise<void> | void;
+  onAdd: (course: Omit<Course, "id">) => Promise<void> | void;
 }
 
 export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsProps) {
-  const { showForm, form, openForm, closeForm, handleSubmit, updateField } =
+  const { showForm, form, openForm, closeForm, handleSubmit, updateField, submitting } =
     useCourseForm(onAdd);
 
   return (
@@ -59,8 +58,10 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
                   }
                   className="w-full px-3 py-2 border-2 border-black font-black text-xs uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
                 >
-                  <option value="THEORY">Lecture</option>
-                  <option value="PRACTICUM">Lab</option>
+                  <option value="LECTURE">Lecture</option>
+                  <option value="LAB">Lab</option>
+                  <option value="SEMINAR">Seminar</option>
+                  <option value="ELECTIVE">Elective</option>
                 </select>
               </div>
               <div>
@@ -78,10 +79,11 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
             </div>
             <div className="flex gap-2">
               <button
-                onClick={handleSubmit}
+                onClick={() => void handleSubmit()}
+                disabled={submitting}
                 className="flex-1 py-2 bg-[#FFC107] border-2 border-black font-black text-xs uppercase active:translate-x-[1px] active:translate-y-[1px] transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
               >
-                Save
+                {submitting ? "Saving..." : "Save"}
               </button>
               <button
                 onClick={closeForm}
@@ -105,12 +107,16 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
               <div className="flex-1">
                 <span
                   className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-[10px] uppercase tracking-wide mb-2 ${
-                    course.type === "THEORY"
+                    course.type === "LECTURE"
                       ? "bg-[#FFB3C1] text-black"
-                      : "bg-[#B3D4FF] text-black"
+                      : course.type === "LAB"
+                        ? "bg-[#B3D4FF] text-black"
+                        : course.type === "SEMINAR"
+                          ? "bg-[#FFA6D6] text-black"
+                          : "bg-[#C4B5FD] text-black"
                   }`}
                 >
-                  {course.type === "THEORY" ? "LECTURE" : "LAB"}
+                  {course.type}
                 </span>
                 <p className="font-bold text-sm text-black">{course.name}</p>
                 <p className="font-black text-xs text-gray-500 uppercase tracking-wide mt-1">
@@ -118,7 +124,7 @@ export default function CourseCards({ courses, onDelete, onAdd }: CourseCardsPro
                 </p>
               </div>
               <button
-                onClick={() => onDelete(course.id)}
+                onClick={() => void onDelete(course.id)}
                 aria-label={`Delete ${course.name}`}
                 className="p-2.5 text-black hover:bg-red-100 hover:text-red-600 border-2 border-transparent hover:border-black transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
               >

@@ -2,10 +2,9 @@
 
 import React from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { BurnoutTrend } from "./burnoutData";
 
 interface BurnoutChartProps {
-  data: BurnoutTrend[];
+  data: Array<{ day: string; probability: number }>;
 }
 
 export default function BurnoutChart({ data }: BurnoutChartProps) {

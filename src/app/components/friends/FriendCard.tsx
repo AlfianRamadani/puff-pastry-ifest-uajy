@@ -3,14 +3,22 @@
 import React, { memo } from "react";
 import Link from "next/link";
 import { MessageSquare, UserPlus, Zap, Send } from "lucide-react";
-import type { Friend } from "./friendsData";
+
+export interface FriendListItem {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  status: "online" | "in_session" | "offline";
+  activity?: string | null;
+  lastSeen?: string | null;
+}
 
 const STATUS_CONFIG = {
   online: {
     label: "ONLINE",
     dotColor: "bg-green-500",
   },
-  "in-session": {
+  in_session: {
     label: "IN SESSION",
     dotColor: "bg-[#FFC107]",
   },
@@ -30,14 +38,20 @@ const AVATAR_COLORS = [
 ];
 
 interface FriendCardProps {
-  friend: Friend;
+  friend: FriendListItem;
 }
 
 // Desktop card
 export const FriendCardDesktop: React.FC<FriendCardProps> = memo(({ friend }) => {
   const status = STATUS_CONFIG[friend.status];
   const isActive = friend.status !== "offline";
-  const avatarColor = AVATAR_COLORS[parseInt(friend.id) % AVATAR_COLORS.length];
+  const initials = friend.name
+    .split(" ")
+    .map((part) => part[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const avatarColor = AVATAR_COLORS[friend.id.charCodeAt(0) % AVATAR_COLORS.length];
 
   return (
     <div className="bg-white border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-5 flex flex-col gap-4">
@@ -46,7 +60,7 @@ export const FriendCardDesktop: React.FC<FriendCardProps> = memo(({ friend }) =>
         <div
           className={`${avatarColor} w-12 h-12 border-2 border-black flex items-center justify-center font-black text-sm text-black shrink-0`}
         >
-          {friend.avatar}
+          {initials}
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-black text-sm text-black uppercase tracking-wide truncate">
@@ -103,14 +117,20 @@ FriendCardDesktop.displayName = "FriendCardDesktop";
 export const FriendCardMobile: React.FC<FriendCardProps> = memo(({ friend }) => {
   const status = STATUS_CONFIG[friend.status];
   const isActive = friend.status !== "offline";
-  const avatarColor = AVATAR_COLORS[parseInt(friend.id) % AVATAR_COLORS.length];
+  const initials = friend.name
+    .split(" ")
+    .map((part) => part[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const avatarColor = AVATAR_COLORS[friend.id.charCodeAt(0) % AVATAR_COLORS.length];
 
   const statusText =
     friend.status === "online"
-      ? `Online · ${friend.sessionDuration ?? ""}`
-      : friend.status === "in-session"
-        ? `In Session · ${friend.activity ?? ""}`
-        : `Offline · ${friend.lastSeen ?? ""}`;
+      ? `Online${friend.activity ? ` · ${friend.activity}` : ""}`
+      : friend.status === "in_session"
+        ? `In Session${friend.activity ? ` · ${friend.activity}` : ""}`
+        : `Offline${friend.lastSeen ? ` · ${friend.lastSeen}` : ""}`;
 
   return (
     <div className="flex items-center gap-3 bg-white border-[3px] border-black p-3 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
@@ -118,7 +138,7 @@ export const FriendCardMobile: React.FC<FriendCardProps> = memo(({ friend }) => 
         <div
           className={`${avatarColor} w-10 h-10 border-2 border-black flex items-center justify-center font-black text-xs text-black shrink-0`}
         >
-          {friend.avatar}
+          {initials}
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-black text-xs text-black uppercase tracking-wide truncate">
@@ -142,7 +162,7 @@ export const FriendCardMobile: React.FC<FriendCardProps> = memo(({ friend }) => 
         >
           <Send className="w-4 h-4 text-black" strokeWidth={2.5} />
         </button>
-        {friend.status === "in-session" && (
+        {friend.status === "in_session" && (
           <button
             aria-label={`Join ${friend.name}'s session`}
             className="p-2 border-2 border-black bg-[#FFC107] active:translate-x-[1px] active:translate-y-[1px] transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
@@ -164,25 +184,35 @@ export const FriendCardMobile: React.FC<FriendCardProps> = memo(({ friend }) => 
 FriendCardMobile.displayName = "FriendCardMobile";
 
 // Add new friend placeholder (desktop)
-export const AddFriendCard: React.FC = () => (
-  <button className="w-full h-full min-h-[160px] border-[3px] border-dashed border-black bg-white flex flex-col items-center justify-center gap-2 hover:bg-[#F4F8FA] transition-colors duration-150 cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2">
+export const AddFriendCard: React.FC<{ pendingCount?: number }> = ({ pendingCount = 0 }) => (
+  <Link href="/friends/add" className="relative w-full h-full min-h-[160px] border-[3px] border-dashed border-black bg-white flex flex-col items-center justify-center gap-2 hover:bg-[#F4F8FA] transition-colors duration-150 cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2">
+    {pendingCount > 0 && (
+      <span className="absolute top-2 right-2 bg-[#FF4444] border-2 border-black px-2 py-0.5 font-black text-[10px] text-white">
+        {pendingCount}
+      </span>
+    )}
     <div className="w-12 h-12 border-[3px] border-dashed border-black rounded-full flex items-center justify-center group-hover:border-solid group-hover:bg-[#FFC107] transition-all duration-150">
       <UserPlus className="w-5 h-5 text-black" strokeWidth={2.5} />
     </div>
     <span className="font-black text-xs text-black uppercase tracking-wide">
       Add New Friend
     </span>
-  </button>
+  </Link>
 );
 
 // Add new friend (mobile)
-export const AddFriendMobile: React.FC = () => (
-  <button className="flex items-center gap-3 bg-white border-[3px] border-dashed border-black p-3 w-full hover:bg-[#F4F8FA] transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black">
+export const AddFriendMobile: React.FC<{ pendingCount?: number }> = ({ pendingCount = 0 }) => (
+  <Link href="/friends/add" className="relative flex items-center gap-3 bg-white border-[3px] border-dashed border-black p-3 w-full hover:bg-[#F4F8FA] transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black">
+    {pendingCount > 0 && (
+      <span className="absolute top-2 right-2 bg-[#FF4444] border-2 border-black px-2 py-0.5 font-black text-[10px] text-white">
+        {pendingCount}
+      </span>
+    )}
     <div className="w-10 h-10 border-2 border-dashed border-black rounded-full flex items-center justify-center shrink-0">
       <UserPlus className="w-4 h-4 text-black" strokeWidth={2.5} />
     </div>
     <span className="font-black text-xs text-black uppercase tracking-wide">
       Add New Friend
     </span>
-  </button>
+  </Link>
 );

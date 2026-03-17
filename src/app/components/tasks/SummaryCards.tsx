@@ -1,14 +1,21 @@
 "use client";
 
-import React from "react";
 import { BookOpen, GraduationCap, Target } from "lucide-react";
 
 interface SummaryCardsProps {
   totalSKS: number;
   courseCount: number;
+  targetGpa: number | null;
+  onTargetGpaSave: (next: number) => Promise<void> | void;
+  savingTargetGpa?: boolean;
 }
 
-export default function SummaryCards({ totalSKS, courseCount }: SummaryCardsProps) {
+export default function SummaryCards({
+  totalSKS,
+  courseCount,
+  targetGpa,
+  savingTargetGpa = false,
+}: SummaryCardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {/* Total Semester Load — Hero */}
@@ -44,7 +51,8 @@ export default function SummaryCards({ totalSKS, courseCount }: SummaryCardsProp
           </span>
         </div>
         <p className="font-black text-4xl text-black">
-          3.85 <span className="text-lg">/ 4.0</span>
+          {(targetGpa ?? 3.85).toFixed(2)} <span className="text-lg">/ 4.0</span>
+          {savingTargetGpa ? <span className="ml-2 text-xs font-black uppercase text-black/50">Saving...</span> : null}
         </p>
       </div>
     </div>

@@ -1,18 +1,17 @@
 "use client";
 
-import React from "react";
 import { Trash2, Plus } from "lucide-react";
 import type { Course } from "./courseData";
 import { useCourseForm } from "./useCourseForm";
 
 interface CourseTableProps {
   courses: Course[];
-  onDelete: (id: string) => void;
-  onAdd: (course: Omit<Course, "id">) => void;
+  onDelete: (id: string) => Promise<void> | void;
+  onAdd: (course: Omit<Course, "id">) => Promise<void> | void;
 }
 
 export default function CourseTable({ courses, onDelete, onAdd }: CourseTableProps) {
-  const { showForm, form, openForm, closeForm, handleSubmit, updateField } =
+  const { showForm, form, openForm, closeForm, handleSubmit, updateField, submitting } =
     useCourseForm(onAdd);
 
   return (
@@ -66,12 +65,16 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                 <td className="px-4 py-3">
                   <span
                     className={`inline-block px-3 py-1 border-2 border-black font-black text-[10px] uppercase tracking-wide ${
-                      course.type === "THEORY"
+                      course.type === "LECTURE"
                         ? "bg-[#FFB3C1] text-black"
-                        : "bg-[#B3D4FF] text-black"
+                        : course.type === "LAB"
+                          ? "bg-[#B3D4FF] text-black"
+                          : course.type === "SEMINAR"
+                            ? "bg-[#FFA6D6] text-black"
+                            : "bg-[#C4B5FD] text-black"
                     }`}
                   >
-                    {course.type === "THEORY" ? "LECTURE" : "LAB"}
+                    {course.type}
                   </span>
                 </td>
                 <td className="px-4 py-3 font-black text-sm text-black">
@@ -79,7 +82,7 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                 </td>
                 <td className="px-4 py-3">
                   <button
-                    onClick={() => onDelete(course.id)}
+                    onClick={() => void onDelete(course.id)}
                     aria-label={`Delete ${course.name}`}
                     className="p-2.5 text-black hover:bg-red-100 hover:text-red-600 border-2 border-transparent hover:border-black transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
                   >
@@ -103,7 +106,7 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                     placeholder="Course name..."
                     value={form.name}
                     onChange={(e) => updateField("name", e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                    onKeyDown={(e) => e.key === "Enter" && void handleSubmit()}
                     className="w-full px-3 py-1.5 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
                     autoFocus
                   />
@@ -118,10 +121,12 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                     }
                     className="px-3 py-1.5 border-2 border-black font-black text-[10px] uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
                   >
-                    <option value="THEORY">Lecture</option>
-                    <option value="PRACTICUM">Lab</option>
-                  </select>
-                </td>
+                      <option value="LECTURE">Lecture</option>
+                      <option value="LAB">Lab</option>
+                      <option value="SEMINAR">Seminar</option>
+                      <option value="ELECTIVE">Elective</option>
+                    </select>
+                  </td>
                 <td className="px-4 py-3">
                   <label htmlFor="course-sks" className="sr-only">Credits</label>
                   <input
@@ -138,10 +143,11 @@ export default function CourseTable({ courses, onDelete, onAdd }: CourseTablePro
                 </td>
                 <td className="px-4 py-3 flex gap-2">
                   <button
-                    onClick={handleSubmit}
+                    onClick={() => void handleSubmit()}
+                    disabled={submitting}
                     className="px-3 py-1.5 bg-[#FFC107] border-2 border-black font-black text-xs active:translate-x-[1px] active:translate-y-[1px] transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
                   >
-                    Save
+                    {submitting ? "Saving..." : "Save"}
                   </button>
                   <button
                     onClick={closeForm}

@@ -2,19 +2,20 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { Search, FileText, Trash2, Plus, Timer } from "lucide-react";
-import {
-  getTasks,
-  addTask,
-  deleteTask,
-  updateTask,
-  saveTasks,
-  formatDueDate,
-  type Task,
-  type Priority,
-  type Status,
-} from "./taskData";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 
 type SortField = "DEADLINE" | "PRIORITY" | "NAME";
+type Priority = "HIGH" | "MEDIUM" | "LOW" | "DONE";
+type Status = "NOT STARTED" | "IN PROGRESS" | "OVERDUE" | "DONE";
+
+type Task = {
+  id: string;
+  name: string;
+  priority: Priority;
+  status: Status;
+  dueDate: string;
+};
 
 const PRIORITY_CONFIG: Record<Priority, { bg: string; text: string }> = {
   HIGH: { bg: "bg-[#FFB3C1]", text: "text-black" },
@@ -32,7 +33,50 @@ const STATUS_CONFIG: Record<Status, { bg: string; text: string }> = {
 
 const PRIORITY_ORDER: Record<Priority, number> = { HIGH: 0, MEDIUM: 1, LOW: 2, DONE: 3 };
 
-export default function MyTasksTab() {
+function dbToUiStatus(value: string | null): Status {
+  const status = (value ?? "not_started").toLowerCase();
+  if (status === "done") return "DONE";
+  if (status === "in_progress") return "IN PROGRESS";
+  if (status === "overdue") return "OVERDUE";
+  return "NOT STARTED";
+}
+
+function uiToDbStatus(value: Status): string {
+  if (value === "DONE") return "done";
+  if (value === "IN PROGRESS") return "in_progress";
+  if (value === "OVERDUE") return "overdue";
+  return "not_started";
+}
+
+function dbToUiPriority(value: string | null, status: Status): Priority {
+  if (status === "DONE") return "DONE";
+  const priority = (value ?? "medium").toLowerCase();
+  if (priority === "high") return "HIGH";
+  if (priority === "low") return "LOW";
+  return "MEDIUM";
+}
+
+function uiToDbPriority(value: Priority): string {
+  if (value === "HIGH") return "high";
+  if (value === "LOW") return "low";
+  return "medium";
+}
+
+function formatDueDate(dateStr: string): string {
+  if (!dateStr) return "No due date";
+  const due = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - due.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays === -1) return "Tomorrow";
+  if (diffDays < 0) return due.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return `${diffDays}d ago`;
+}
+
+export default function MyTasksTab({ dateFilter }: { dateFilter?: string | null }) {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("DEADLINE");
@@ -40,137 +84,190 @@ export default function MyTasksTab() {
   const [newName, setNewName] = useState("");
   const [newPriority, setNewPriority] = useState<Priority>("MEDIUM");
   const [newDueDate, setNewDueDate] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [savingNew, setSavingNew] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
+
+  const loadTasks = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    setErrorMessage(null);
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("id, title, priority, status, due_date")
+      .eq("user_id", user.id)
+      .order("due_date", { ascending: true, nullsFirst: false });
+
+    if (error) {
+      setErrorMessage(error.message);
+      setLoading(false);
+      return;
+    }
+
+    const mapped: Task[] = (data ?? []).map((item) => {
+      const status = dbToUiStatus(item.status);
+      return {
+        id: item.id,
+        name: item.title,
+        status,
+        priority: dbToUiPriority(item.priority, status),
+        dueDate: item.due_date ?? "",
+      };
+    });
+    setTasks(mapped);
+    setLoading(false);
+  }, [user]);
 
   useEffect(() => {
-    setTasks(getTasks());
-  }, []);
-
-  const handleDelete = useCallback((id: string) => {
-    setTasks(deleteTask(id));
-  }, []);
-
-  const handleStatusToggle = useCallback((id: string, current: Status) => {
-    const next: Status = current === "DONE" ? "NOT STARTED" : "DONE";
-    const priority: Priority = next === "DONE" ? "DONE" : "MEDIUM";
-    setTasks(updateTask(id, { status: next, priority }));
-  }, []);
-
-  const handleAddTask = useCallback(() => {
-    if (!newName.trim()) return;
-    const due = newDueDate || (() => {
-      const d = new Date();
-      d.setDate(d.getDate() + 7);
-      return d.toISOString().split("T")[0];
-    })();
-    setTasks(
-      addTask({
-        name: newName.trim(),
-        priority: newPriority,
-        status: "NOT STARTED",
-        dueDate: due,
+    if (!user) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadTasks();
+    const channel = supabase
+      .channel(`tasks-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "tasks", filter: `user_id=eq.${user.id}` }, () => {
+        void loadTasks();
       })
-    );
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [loadTasks, user]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    if (!user) return;
+    const previous = tasks;
+    setTasks((prev) => prev.filter((task) => task.id !== id));
+    const { error } = await supabase.from("tasks").delete().eq("id", id).eq("user_id", user.id);
+    if (error) {
+      setTasks(previous);
+      setErrorMessage(error.message);
+    }
+    setPendingDeleteId(null);
+  }, [tasks, user]);
+
+  const handleFieldUpdate = useCallback(async (id: string, patch: Partial<Task>) => {
+    if (!user) return;
+    const previous = tasks;
+    setUpdatingTaskId(id);
+    setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, ...patch } : task)));
+
+    const payload: Record<string, string | null> = {};
+    if (patch.status) payload.status = uiToDbStatus(patch.status);
+    if (patch.priority) payload.priority = uiToDbPriority(patch.priority);
+    if (Object.prototype.hasOwnProperty.call(patch, "dueDate")) payload.due_date = patch.dueDate ? patch.dueDate : null;
+
+    const { error } = await supabase.from("tasks").update(payload).eq("id", id).eq("user_id", user.id);
+    if (error) {
+      setTasks(previous);
+      setErrorMessage(error.message);
+    }
+    setUpdatingTaskId(null);
+  }, [tasks, user]);
+
+  const handleAddTask = useCallback(async () => {
+    if (!user || !newName.trim() || savingNew) return;
+    setSavingNew(true);
+    const due = newDueDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+    const { error } = await supabase.from("tasks").insert({
+      user_id: user.id,
+      title: newName.trim(),
+      priority: uiToDbPriority(newPriority),
+      status: "not_started",
+      due_date: due,
+    });
+    if (error) {
+      setErrorMessage(error.message);
+      setSavingNew(false);
+      return;
+    }
     setNewName("");
     setNewPriority("MEDIUM");
     setNewDueDate("");
     setShowForm(false);
-  }, [newName, newPriority, newDueDate]);
+    setSavingNew(false);
+    void loadTasks();
+  }, [loadTasks, newDueDate, newName, newPriority, savingNew, user]);
 
-  const handleEstimateDeadline = useCallback(() => {
-    const now = new Date();
-    setTasks((prev) => {
-      const updated = prev.map((t) => {
-        if (t.status === "DONE") return t;
-        const days = t.priority === "HIGH" ? 3 : t.priority === "MEDIUM" ? 7 : 14;
-        const est = new Date(now);
-        est.setDate(est.getDate() + days);
-        return { ...t, dueDate: est.toISOString().split("T")[0] };
-      });
-      saveTasks(updated);
-      return updated;
+  const handleStatusToggle = useCallback(async (task: Task) => {
+    const nextStatus: Status = task.status === "DONE" ? "NOT STARTED" : "DONE";
+    await handleFieldUpdate(task.id, {
+      status: nextStatus,
+      priority: nextStatus === "DONE" ? "DONE" : "MEDIUM",
     });
-  }, []);
+  }, [handleFieldUpdate]);
 
-  const filtered = useMemo(
-    () =>
-      tasks
-        .filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
-        .sort((a, b) => {
-          if (sortBy === "DEADLINE") return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-          if (sortBy === "PRIORITY") return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
-          return a.name.localeCompare(b.name);
-        }),
-    [tasks, search, sortBy]
-  );
+  const handleEstimateDeadline = useCallback(async () => {
+    if (!user) return;
+    setErrorMessage("Deadline estimate UI is temporarily disabled to preserve original layout.");
+  }, [user]);
+
+  const filtered = useMemo(() => {
+    return tasks
+      .filter((task) => task.name.toLowerCase().includes(search.toLowerCase()))
+      .filter((task) => (dateFilter ? task.dueDate === dateFilter : true))
+      .sort((a, b) => {
+        if (sortBy === "DEADLINE") return new Date(a.dueDate || "9999-12-31").getTime() - new Date(b.dueDate || "9999-12-31").getTime();
+        if (sortBy === "PRIORITY") return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+        return a.name.localeCompare(b.name);
+      });
+  }, [dateFilter, search, sortBy, tasks]);
 
   return (
     <div className="space-y-4">
-      {/* Header with CTA */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <p className="font-bold text-sm text-gray-500">
-          {tasks.length} tasks total · {tasks.filter((t) => t.status !== "DONE").length} active
-        </p>
+        <p className="font-bold text-sm text-gray-500">{tasks.length} tasks total · {tasks.filter((task) => task.status !== "DONE").length} active</p>
         <button
-          onClick={handleEstimateDeadline}
-          className="flex items-center gap-2 px-4 py-2 bg-[#FFC107] border-[3px] border-black font-black text-xs uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2">
+          onClick={() => void handleEstimateDeadline()}
+          className="flex items-center gap-2 px-4 py-2 bg-[#FFC107] border-[3px] border-black font-black text-xs uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+        >
           <Timer className="w-4 h-4" strokeWidth={2.5} />
           Estimate Deadline
         </button>
       </div>
 
-      {/* Search & Sort */}
+      {errorMessage && <div className="border-[3px] border-black bg-[#FFB3C1] p-3 font-bold text-xs">{errorMessage}</div>}
+
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <label htmlFor="task-search" className="sr-only">Search tasks</label>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={2.5} />
           <input
-            id="task-search"
             type="text"
             placeholder="Search tasks..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border-[3px] border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            className="w-full pl-10 pr-4 py-2.5 border-[3px] border-black font-bold text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <label htmlFor="task-sort" className="sr-only">Sort by</label>
-          <select
-            id="task-sort"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortField)}
-            className="px-4 py-2.5 border-[3px] border-black font-black text-xs uppercase tracking-wide outline-none focus:ring-2 focus:ring-[#FFC107] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-          >
-            <option value="DEADLINE">Sort by: Deadline</option>
-            <option value="PRIORITY">Sort by: Priority</option>
-            <option value="NAME">Sort by: Name</option>
-          </select>
-        </div>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortField)} className="px-4 py-2.5 border-[3px] border-black font-black text-xs uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <option value="DEADLINE">Sort by: Deadline</option>
+          <option value="PRIORITY">Sort by: Priority</option>
+          <option value="NAME">Sort by: Name</option>
+        </select>
       </div>
 
-      {/* Desktop Table */}
       <div className="hidden md:block border-[3px] border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-        {filtered.length > 0 ? (
-        <table className="w-full">
-          <thead>
-            <tr className="border-b-[3px] border-black bg-gray-50">
-              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black">Name</th>
-              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-28">Priority</th>
-              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-32">Status</th>
-              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-28">Due Date</th>
-              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-wide text-black w-20"><span className="sr-only">Delete</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((task) => {
-              const isDone = task.status === "DONE";
-              return (
+        {loading ? (
+          <div className="p-8 text-center font-black text-xs uppercase text-black/50">Loading tasks...</div>
+        ) : filtered.length > 0 ? (
+          <table className="w-full">
+            <thead>
+              <tr className="border-b-[3px] border-black bg-gray-50">
+                <th className="text-left px-4 py-3 font-black text-xs uppercase">Name</th>
+                <th className="text-left px-4 py-3 font-black text-xs uppercase w-28">Priority</th>
+                <th className="text-left px-4 py-3 font-black text-xs uppercase w-36">Status</th>
+                <th className="text-left px-4 py-3 font-black text-xs uppercase w-28">Due Date</th>
+                <th className="text-left px-4 py-3 font-black text-xs uppercase w-20">Delete</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((task) => (
                 <tr key={task.id} className="border-b-2 border-black last:border-b-0">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={2} />
-                      <span className={`font-bold text-sm ${isDone ? "line-through text-gray-400" : "text-black"}`}>
-                        {task.name}
-                      </span>
+                      <span className={`font-bold text-sm ${task.status === "DONE" ? "line-through text-gray-400" : "text-black"}`}>{task.name}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -180,9 +277,9 @@ export default function MyTasksTab() {
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => handleStatusToggle(task.id, task.status)}
-                      aria-label={`Mark ${task.name} as ${task.status === "DONE" ? "not started" : "done"}`}
-                      className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-xs uppercase tracking-wide cursor-pointer transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
+                      onClick={() => void handleStatusToggle(task)}
+                      disabled={updatingTaskId === task.id}
+                      className={`inline-block px-2.5 py-0.5 border-2 border-black font-black text-xs uppercase tracking-wide ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
                     >
                       {task.status}
                     </button>
@@ -191,177 +288,62 @@ export default function MyTasksTab() {
                     {formatDueDate(task.dueDate)}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleDelete(task.id)}
-                      aria-label={`Delete ${task.name}`}
-                      className="p-2.5 text-black hover:bg-red-100 hover:text-red-600 border-2 border-transparent hover:border-black transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
-                    >
-                      <Trash2 className="w-4 h-4" strokeWidth={2.5} />
-                    </button>
+                    {pendingDeleteId === task.id ? (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => void handleDelete(task.id)} className="px-2 py-1 border-2 border-black bg-[#FFB3C1] font-black text-[10px] uppercase">Yes</button>
+                        <button onClick={() => setPendingDeleteId(null)} className="px-2 py-1 border-2 border-black bg-white font-black text-[10px] uppercase">No</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setPendingDeleteId(task.id)} className="p-2.5 border-2 border-transparent hover:border-black hover:bg-red-100">
+                        <Trash2 className="w-4 h-4" strokeWidth={2.5} />
+                      </button>
+                    )}
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
         ) : (
           <div className="p-12 text-center">
-            <p className="font-black text-sm uppercase tracking-wide text-gray-400">
-              {search ? "No tasks match your search" : "No tasks yet"}
-            </p>
+            <p className="font-black text-sm uppercase tracking-wide text-gray-400">{search ? "No tasks match your search" : "No tasks yet"}</p>
           </div>
         )}
 
         {showForm ? (
           <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-t-2 border-black bg-[#FFC107]/10">
-            <label htmlFor="new-task-name" className="sr-only">New task name</label>
-            <input
-              id="new-task-name"
-              type="text"
-              placeholder="Task name..."
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
-              className="flex-1 min-w-[120px] px-3 py-1.5 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
-              autoFocus
-            />
-            <label htmlFor="new-task-priority" className="sr-only">Priority</label>
-            <select
-              id="new-task-priority"
-              value={newPriority}
-              onChange={(e) => setNewPriority(e.target.value as Priority)}
-              className="px-3 py-1.5 border-2 border-black font-black text-xs uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
-            >
+            <input type="text" placeholder="Task name..." value={newName} onChange={(e) => setNewName(e.target.value)} className="flex-1 min-w-[120px] px-3 py-1.5 border-2 border-black font-bold text-sm" />
+            <select value={newPriority} onChange={(e) => setNewPriority(e.target.value as Priority)} className="px-3 py-1.5 border-2 border-black font-black text-xs uppercase">
               <option value="HIGH">High</option>
               <option value="MEDIUM">Medium</option>
               <option value="LOW">Low</option>
             </select>
-            <label htmlFor="new-task-due" className="sr-only">Due date</label>
-            <input
-              id="new-task-due"
-              type="date"
-              value={newDueDate}
-              onChange={(e) => setNewDueDate(e.target.value)}
-              className="px-3 py-1.5 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
-            />
-            <button onClick={handleAddTask} className="px-3 py-1.5 bg-[#FFC107] border-2 border-black font-black text-xs transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] outline-none focus-visible:ring-2 focus-visible:ring-black">
-              Save
-            </button>
-            <button onClick={() => { setShowForm(false); setNewName(""); setNewPriority("MEDIUM"); setNewDueDate(""); }} className="px-3 py-1.5 bg-white border-2 border-black font-black text-xs transition-colors duration-150 hover:bg-gray-100 outline-none focus-visible:ring-2 focus-visible:ring-black">
-              Cancel
-            </button>
+            <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} className="px-3 py-1.5 border-2 border-black font-bold text-sm" />
+            <button disabled={savingNew} onClick={() => void handleAddTask()} className="px-3 py-1.5 bg-[#FFC107] border-2 border-black font-black text-xs">{savingNew ? "Saving..." : "Save"}</button>
+            <button onClick={() => { setShowForm(false); setNewName(""); setNewPriority("MEDIUM"); setNewDueDate(""); }} className="px-3 py-1.5 bg-white border-2 border-black font-black text-xs">Cancel</button>
           </div>
         ) : (
-          <button
-            onClick={() => setShowForm(true)}
-            className="w-full py-3 text-center font-black text-xs uppercase tracking-wide text-gray-500 hover:text-black hover:bg-gray-50 border-t-2 border-black transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-inset"
-          >
+          <button onClick={() => setShowForm(true)} className="w-full py-3 text-center font-black text-xs uppercase tracking-wide text-gray-500 hover:text-black hover:bg-gray-50 border-t-2 border-black">
             + New Task
           </button>
         )}
       </div>
 
-      {/* Mobile Cards */}
-      <div className="md:hidden flex flex-col gap-3">
-        {filtered.length === 0 && (
-          <div className="border-[3px] border-black bg-white p-12 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            <p className="font-black text-sm uppercase tracking-wide text-gray-400">
-              {search ? "No tasks match your search" : "No tasks yet"}
-            </p>
-          </div>
-        )}
-        {filtered.map((task) => {
-          const isDone = task.status === "DONE";
-          return (
-            <div key={task.id} className="border-[3px] border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex gap-2">
-                  <span className={`inline-block px-2 py-0.5 border-2 border-black font-black text-xs uppercase ${PRIORITY_CONFIG[task.priority].bg}`}>
-                    {task.priority}
-                  </span>
-                  <button
-                    onClick={() => handleStatusToggle(task.id, task.status)}
-                    aria-label={`Mark ${task.name} as ${task.status === "DONE" ? "not started" : "done"}`}
-                    className={`inline-block px-2 py-0.5 border-2 border-black font-black text-xs uppercase cursor-pointer transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}
-                  >
-                    {task.status}
-                  </button>
-                </div>
-                <button
-                  onClick={() => handleDelete(task.id)}
-                  aria-label={`Delete ${task.name}`}
-                  className="p-2.5 text-black hover:text-red-600 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
-                >
-                  <Trash2 className="w-4 h-4" strokeWidth={2.5} />
-                </button>
-              </div>
-              <p className={`font-bold text-sm ${isDone ? "line-through text-gray-400" : "text-black"}`}>
-                {task.name}
-              </p>
-              <p className="font-black text-xs text-gray-500 uppercase tracking-wide mt-1">
-                Due: {formatDueDate(task.dueDate)}
-              </p>
-            </div>
-          );
-        })}
-
-        {showForm ? (
-          <div className="border-[3px] border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            <p className="font-black text-xs uppercase tracking-wide mb-3">New Task</p>
-            <label htmlFor="mobile-new-task" className="sr-only">New task name</label>
-            <input
-              id="mobile-new-task"
-              type="text"
-              placeholder="Task name..."
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-black font-bold text-sm mb-3 outline-none focus:ring-2 focus:ring-[#FFC107]"
-              autoFocus
-            />
-            <div className="flex gap-3 mb-3">
-              <div className="flex-1">
-                <label htmlFor="mobile-new-priority" className="font-black text-xs uppercase tracking-wide block mb-1">Priority</label>
-                <select
-                  id="mobile-new-priority"
-                  value={newPriority}
-                  onChange={(e) => setNewPriority(e.target.value as Priority)}
-                  className="w-full px-3 py-2 border-2 border-black font-black text-xs uppercase outline-none focus:ring-2 focus:ring-[#FFC107]"
-                >
-                  <option value="HIGH">High</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="LOW">Low</option>
-                </select>
-              </div>
-              <div className="flex-1">
-                <label htmlFor="mobile-new-due" className="font-black text-xs uppercase tracking-wide block mb-1">Due Date</label>
-                <input
-                  id="mobile-new-due"
-                  type="date"
-                  value={newDueDate}
-                  onChange={(e) => setNewDueDate(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-black font-bold text-sm outline-none focus:ring-2 focus:ring-[#FFC107]"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={handleAddTask} className="flex-1 py-2 bg-[#FFC107] border-2 border-black font-black text-xs uppercase transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] outline-none focus-visible:ring-2 focus-visible:ring-black">
-                Save
-              </button>
-              <button onClick={() => { setShowForm(false); setNewName(""); setNewPriority("MEDIUM"); setNewDueDate(""); }} className="flex-1 py-2 bg-white border-2 border-black font-black text-xs uppercase transition-colors duration-150 hover:bg-gray-100 outline-none focus-visible:ring-2 focus-visible:ring-black">
-                Cancel
-              </button>
+      <div className="md:hidden space-y-3">
+        {filtered.map((task) => (
+          <div key={task.id} className="border-[3px] border-black bg-white p-3 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+            <p className="font-black text-xs uppercase">{task.name}</p>
+            <p className="font-bold text-[10px] text-black/60 mt-1">{formatDueDate(task.dueDate)}</p>
+            <div className="mt-2 flex gap-2">
+              <span className={`px-2 py-1 border-2 border-black font-black text-[10px] ${PRIORITY_CONFIG[task.priority].bg}`}>{task.priority}</span>
+              <span className={`px-2 py-1 border-2 border-black font-black text-[10px] ${STATUS_CONFIG[task.status].bg} ${STATUS_CONFIG[task.status].text}`}>{task.status}</span>
             </div>
           </div>
-        ) : (
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center justify-center gap-2 py-3 border-[3px] border-dashed border-black font-black text-xs uppercase tracking-wide text-gray-500 hover:text-black hover:bg-gray-50 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-black"
-          >
-            <Plus className="w-4 h-4" strokeWidth={2.5} />
-            New Task
-          </button>
-        )}
+        ))}
       </div>
+
+      <button onClick={() => setShowForm((prev) => !prev)} className="md:hidden w-full border-[3px] border-black bg-[#FFC107] py-3 font-black text-xs uppercase tracking-wide flex items-center justify-center gap-2">
+        <Plus className="w-4 h-4" strokeWidth={3} /> New Task
+      </button>
     </div>
   );
 }

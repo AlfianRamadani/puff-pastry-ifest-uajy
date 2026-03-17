@@ -2,11 +2,31 @@
 
 import React, { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { Plus, X, Search, Zap, Clock, Square, BookOpen } from "lucide-react";
-import { getFriends, type Friend } from "./friendsData";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
+
+type FriendOption = {
+  id: string;
+  name: string;
+};
+
+type FriendshipRow = {
+  requester_id: string;
+  addressee_id: string;
+};
+
+type ProfileRow = {
+  id: string;
+  full_name: string | null;
+};
 
 const AVATAR_COLORS = [
-  "bg-[#FFD1B3]", "bg-[#8FFFE1]", "bg-[#FFC107]",
-  "bg-[#B8D4FF]", "bg-[#FFB3D9]", "bg-[#C4B5FD]",
+  "bg-[#FFD1B3]",
+  "bg-[#8FFFE1]",
+  "bg-[#FFC107]",
+  "bg-[#B8D4FF]",
+  "bg-[#FFB3D9]",
+  "bg-[#C4B5FD]",
 ];
 
 function formatTime(seconds: number) {
@@ -17,32 +37,80 @@ function formatTime(seconds: number) {
 }
 
 const StartStudySession: React.FC = () => {
-  const allFriends = useMemo(() => getFriends(), []);
+  const { user, profile } = useAuth();
+  const [allFriends, setAllFriends] = useState<FriendOption[]>([]);
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<Friend[]>([
-    allFriends[0],
-    allFriends[1],
-  ]);
+  const [selected, setSelected] = useState<FriendOption[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [startingSession, setStartingSession] = useState(false);
+  const [endingSession, setEndingSession] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Active session state
   const [sessionActive, setSessionActive] = useState(false);
   const [sessionSubject, setSessionSubject] = useState("");
-  const [sessionParticipants, setSessionParticipants] = useState<Friend[]>([]);
+  const [sessionParticipants, setSessionParticipants] = useState<FriendOption[]>([]);
   const [elapsed, setElapsed] = useState(0);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadFriends = async () => {
+      const { data: friendshipRows, error: friendshipError } = await supabase
+        .from("friendships")
+        .select("requester_id, addressee_id")
+        .eq("status", "accepted")
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+
+      if (friendshipError) {
+        setErrorMessage(friendshipError.message);
+        return;
+      }
+
+      const friendIds = Array.from(
+        new Set(
+          ((friendshipRows as FriendshipRow[] | null) ?? []).map((row) =>
+            row.requester_id === user.id ? row.addressee_id : row.requester_id,
+          ),
+        ),
+      );
+
+      if (friendIds.length === 0) {
+        setAllFriends([]);
+        return;
+      }
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", friendIds);
+
+      if (profilesError) {
+        setErrorMessage(profilesError.message);
+        return;
+      }
+
+      setAllFriends(
+        (((profiles as ProfileRow[] | null) ?? []) as ProfileRow[]).map((entry) => ({
+          id: entry.id,
+          name: entry.full_name ?? "Unknown Friend",
+        })),
+      );
+    };
+    void loadFriends();
+  }, [user]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return [];
     return allFriends.filter(
       (f) =>
         f.name.toLowerCase().includes(query.toLowerCase()) &&
-        !selected.some((s) => s.id === f.id)
+        !selected.some((s) => s.id === f.id),
     );
   }, [query, allFriends, selected]);
 
-  const addFriend = useCallback((friend: Friend) => {
+  const addFriend = useCallback((friend: FriendOption) => {
     setSelected((prev) => [...prev, friend]);
     setQuery("");
     setShowDropdown(false);
@@ -71,29 +139,160 @@ const StartStudySession: React.FC = () => {
     };
   }, [showDropdown]);
 
-  // Timer
   useEffect(() => {
     if (!sessionActive) return;
     const interval = setInterval(() => setElapsed((s) => s + 1), 1000);
     return () => clearInterval(interval);
   }, [sessionActive]);
 
-  const startSession = useCallback(() => {
+  useEffect(() => {
+    if (!sessionActive || !activeSessionId || !user) return;
+    const timeout = window.setTimeout(async () => {
+      await supabase.from("study_sessions").update({ title: sessionSubject }).eq("id", activeSessionId);
+      await supabase
+        .from("user_presence")
+        .upsert({
+          user_id: user.id,
+          status: "in_session",
+          current_activity: sessionSubject || null,
+          updated_at: new Date().toISOString(),
+        });
+    }, 500);
+    return () => window.clearTimeout(timeout);
+  }, [activeSessionId, sessionActive, sessionSubject, user]);
+
+  const startSession = useCallback(async () => {
+    if (!user || selected.length === 0 || startingSession) return;
+    setStartingSession(true);
+    setErrorMessage(null);
+
+    const startedAt = new Date();
+    const { data: sessionRow, error: sessionError } = await supabase
+      .from("study_sessions")
+      .insert({
+        host_id: user.id,
+        status: "active",
+        started_at: startedAt.toISOString(),
+        title: sessionSubject || null,
+      })
+      .select("id")
+      .single();
+
+    if (sessionError) {
+      setStartingSession(false);
+      setErrorMessage(sessionError.message);
+      return;
+    }
+
+    const sessionId = (sessionRow as { id: string }).id;
+
+    const participantRows = [{ session_id: sessionId, user_id: user.id }].concat(
+      selected.map((friend) => ({ session_id: sessionId, user_id: friend.id })),
+    );
+    const { error: participantsError } = await supabase
+      .from("study_session_participants")
+      .insert(participantRows);
+
+    if (participantsError) {
+      setStartingSession(false);
+      setErrorMessage(participantsError.message);
+      return;
+    }
+
+    const hostName = profile?.full_name ?? user.email ?? "A friend";
+    const notificationRows = selected.map((friend) => ({
+      user_id: friend.id,
+      type: "session_invite",
+      title: `${hostName} started a session`,
+      body: "You were invited to study together",
+      reference_id: sessionId,
+      reference_type: "session",
+    }));
+    const { error: notificationError } = await supabase
+      .from("notifications")
+      .insert(notificationRows);
+
+    if (notificationError) {
+      setStartingSession(false);
+      setErrorMessage(notificationError.message);
+      return;
+    }
+
+    const { error: presenceError } = await supabase
+      .from("user_presence")
+      .upsert({
+        user_id: user.id,
+        status: "in_session",
+        current_activity: sessionSubject || null,
+        updated_at: startedAt.toISOString(),
+      });
+
+    setStartingSession(false);
+    if (presenceError) {
+      setErrorMessage(presenceError.message);
+      return;
+    }
+
+    setActiveSessionId(sessionId);
     setSessionParticipants([...selected]);
     setSessionActive(true);
     setElapsed(0);
-  }, [selected]);
+  }, [profile?.full_name, selected, sessionSubject, startingSession, user]);
 
-  const endSession = useCallback(() => {
+  const endSession = useCallback(async () => {
+    if (!user || !activeSessionId || endingSession) return;
+    setEndingSession(true);
+
+    const endedAt = new Date();
+    const durationMinutes = Math.max(1, Math.round(elapsed / 60));
+    const participantIds = [user.id, ...sessionParticipants.map((entry) => entry.id)];
+
+    const { error: sessionError } = await supabase
+      .from("study_sessions")
+      .update({ status: "ended", ended_at: endedAt.toISOString() })
+      .eq("id", activeSessionId);
+
+    if (sessionError) {
+      setErrorMessage(sessionError.message);
+      setEndingSession(false);
+      return;
+    }
+
+    const { error: logsError } = await supabase.from("study_logs").insert(
+      participantIds.map((participantId) => ({
+        user_id: participantId,
+        session_id: activeSessionId,
+        duration_minutes: durationMinutes,
+        logged_date: endedAt.toISOString().slice(0, 10),
+      })),
+    );
+
+    if (logsError) {
+      setErrorMessage(logsError.message);
+      setEndingSession(false);
+      return;
+    }
+
+    await supabase
+      .from("user_presence")
+      .upsert({
+        user_id: user.id,
+        status: "online",
+        current_activity: null,
+        updated_at: endedAt.toISOString(),
+      });
+
     setSessionActive(false);
     setSessionSubject("");
     setElapsed(0);
-  }, []);
+    setActiveSessionId(null);
+    setSessionParticipants([]);
+    setEndingSession(false);
+  }, [activeSessionId, elapsed, endingSession, sessionParticipants, user]);
 
   const isOpen = showDropdown && filtered.length > 0;
   const listboxId = "friend-search-listbox";
 
-  // Active session view
   if (sessionActive) {
     return (
       <section className="bg-[#FFC107] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 md:p-7">
@@ -105,20 +304,20 @@ const StartStudySession: React.FC = () => {
             <div>
               <h2 className="font-black text-base md:text-lg text-black uppercase tracking-wider">Session Active</h2>
               <p className="font-bold text-xs text-black/60 uppercase tracking-wide">
-                {sessionParticipants.length} participant{sessionParticipants.length !== 1 ? "s" : ""}
+                {sessionParticipants.length + 1} participant{sessionParticipants.length + 1 !== 1 ? "s" : ""}
               </p>
             </div>
           </div>
           <button
-            onClick={endSession}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#FF4444] border-[3px] border-black font-black text-xs text-white uppercase tracking-wide shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all outline-none focus-visible:ring-2 focus-visible:ring-black"
+            onClick={() => void endSession()}
+            disabled={endingSession}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#FF4444] border-[3px] border-black font-black text-xs text-white uppercase tracking-wide shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all outline-none focus-visible:ring-2 focus-visible:ring-black disabled:opacity-50"
           >
             <Square className="w-3 h-3" strokeWidth={3} />
-            End
+            {endingSession ? "Ending..." : "End"}
           </button>
         </div>
 
-        {/* Timer */}
         <div className="bg-white border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Clock className="w-5 h-5 text-black" strokeWidth={2.5} />
@@ -140,14 +339,13 @@ const StartStudySession: React.FC = () => {
           </div>
         </div>
 
-        {/* Participants */}
         <div className="flex flex-wrap gap-2">
           <span className="bg-[#B3FFB3] border-2 border-black px-3 py-1.5 font-black text-xs text-black uppercase tracking-wide flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-green-500" />
             You
           </span>
           {sessionParticipants.map((f) => {
-            const avatarColor = AVATAR_COLORS[parseInt(f.id) % AVATAR_COLORS.length];
+            const avatarColor = AVATAR_COLORS[f.id.charCodeAt(0) % AVATAR_COLORS.length];
             return (
               <span
                 key={f.id}
@@ -169,7 +367,12 @@ const StartStudySession: React.FC = () => {
         Start a Study Session
       </h2>
 
-      {/* Search input (combobox pattern) */}
+      {errorMessage && (
+        <div className="mb-4 border-[3px] border-black bg-[#FFB3C1] p-3 font-bold text-xs text-black">
+          {errorMessage}
+        </div>
+      )}
+
       <div className="relative mb-4" ref={containerRef}>
         <div className="flex items-center border-[3px] border-black bg-[#F4F8FA] px-3 py-2.5">
           <Search className="w-4 h-4 text-black mr-2 shrink-0" strokeWidth={2.5} />
@@ -198,7 +401,6 @@ const StartStudySession: React.FC = () => {
           </button>
         </div>
 
-        {/* Dropdown */}
         {isOpen && (
           <ul
             id={listboxId}
@@ -220,7 +422,6 @@ const StartStudySession: React.FC = () => {
         )}
       </div>
 
-      {/* Selected chips */}
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4" role="list" aria-label="Selected friends">
           {selected.map((f) => (
@@ -242,15 +443,16 @@ const StartStudySession: React.FC = () => {
         </div>
       )}
 
-      {/* CTA */}
       <button
-        onClick={startSession}
-        disabled={selected.length === 0}
+        onClick={() => void startSession()}
+        disabled={selected.length === 0 || startingSession}
         className="w-full bg-[#FFC107] border-[3px] border-black py-3 font-black text-sm md:text-base text-black uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
       >
-        {selected.length > 0
-          ? `Start Session with ${selected.length} Friend${selected.length > 1 ? "s" : ""}`
-          : "Select Friends to Start"}
+        {startingSession
+          ? "Starting Session..."
+          : selected.length > 0
+            ? `Start Session with ${selected.length} Friend${selected.length > 1 ? "s" : ""}`
+            : "Select Friends to Start"}
       </button>
     </section>
   );

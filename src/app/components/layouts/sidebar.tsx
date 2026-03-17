@@ -1,9 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, CheckSquare, PenLine, ChevronDown, Zap, Settings, Sparkles } from 'lucide-react';
+import { Home, Users, CheckSquare, PenLine, ChevronDown, Zap, Settings, Sparkles, LogOut } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const NAV_COLORS = {
   HOME: { active: "bg-[#FFC107]", dot: "bg-[#FFC107]" },
@@ -23,6 +24,22 @@ const TOUR_KEY = "puff_pastry_tour_completed";
 
 const Sidebar = () => {
   const pathname = usePathname();
+  const { profile, signOut } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const displayName = profile?.full_name || profile?.email || "Student";
+  const initial = displayName.charAt(0).toUpperCase();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -97,22 +114,50 @@ const Sidebar = () => {
 
         {/* Footer */}
         <div className="p-4 border-t-[3px] border-black/10">
-          <Link href="/settings/profile" className="block outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107]">
-            <div className={`flex items-center gap-3 px-3 py-2.5 border-[3px] transition-all ${
-              pathname.startsWith('/settings')
-                ? 'bg-[#E8D5FF] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black'
-                : 'border-transparent hover:bg-[#FFC107]/10 hover:border-black/10'
-            }`}>
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((prev) => !prev)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 border-[3px] transition-all text-left outline-none focus-visible:ring-2 focus-visible:ring-black ${
+                pathname.startsWith('/settings')
+                  ? 'bg-[#E8D5FF] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black'
+                  : 'border-transparent hover:bg-[#FFC107]/10 hover:border-black/10'
+              }`}
+            >
               <div className="w-8 h-8 bg-[#FFB3C1] border-2 border-black flex items-center justify-center">
-                <span className="font-black text-xs text-black">A</span>
+                <span className="font-black text-xs text-black">{initial}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-black text-xs text-black uppercase tracking-wide truncate">Alfian</p>
+                <p className="font-black text-xs text-black uppercase tracking-wide truncate">{displayName}</p>
                 <p className="font-bold text-xs text-black/60 truncate">Student</p>
               </div>
               <Settings className="w-4 h-4 text-black/60 shrink-0" strokeWidth={2.5} />
-            </div>
-          </Link>
+            </button>
+
+            {menuOpen && (
+              <div className="absolute left-0 right-0 bottom-full mb-2 border-[3px] border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-30">
+                <Link
+                  href="/settings/profile"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 border-b-2 border-black/10 font-black text-xs uppercase tracking-wide text-black hover:bg-[#E8D5FF]"
+                >
+                  <Settings className="w-3.5 h-3.5" strokeWidth={2.5} />
+                  Profile Settings
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    void signOut();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 font-black text-xs uppercase tracking-wide text-black hover:bg-[#FFB3C1]"
+                >
+                  <LogOut className="w-3.5 h-3.5" strokeWidth={2.5} />
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => {
               localStorage.removeItem(TOUR_KEY);

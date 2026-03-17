@@ -1,263 +1,361 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-// Hapus ChevronLeft dan ChevronRight dari import
-import { X, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
+import type { Course } from "./courseData";
 
-// =========================================
-// 1. SCHEDULE MODAL (ZERO-LAG)
-// =========================================
-const ScheduleModal = ({ onClose, onSave, onDelete, initialData, defaultDay, defaultTime }: any) => {
-  const courseRef = useRef<HTMLInputElement>(null);
-  const [eventType, setEventType] = useState(initialData ? initialData.type : 'major');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    let color = "bg-[#FFC107]"; 
-    if (eventType === "elective") color = "bg-[#B3D4FF]";
-    if (eventType === "seminar") color = "bg-[#FFA6D6]";
-    if (eventType === "lab") color = "bg-[#5EEAD4]";
-
-    onSave({
-      course: courseRef.current!.value,
-      type: eventType,
-      color: color,
-      day: defaultDay,
-      time: defaultTime
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-4 w-screen h-screen">
-      <div className="bg-white border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm p-5 sm:p-6 animate-in zoom-in duration-200">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-black uppercase text-black">
-            {initialData ? 'Edit Class' : 'Add Class'} 
-            <span className="block text-xs text-gray-500 mt-1">Day {defaultDay} at {defaultTime}</span>
-          </h2>
-          <button type="button" onClick={onClose} className="hover:bg-red-100 p-1 border-2 border-transparent hover:border-black transition-all">
-            <X className="w-5 h-5 text-black" strokeWidth={3} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-xs font-black uppercase mb-1">Course / Activity Name</label>
-            <input 
-              type="text" required
-              ref={courseRef}
-              defaultValue={initialData ? initialData.course : ''}
-              placeholder="e.g. Data Structures"
-              className="w-full bg-[#EEF6F6] border-[3px] border-black p-2 font-bold text-sm outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:-translate-y-1"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-black uppercase mb-2">Activity Type</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { id: "major", label: "Major Course", bg: "bg-[#FFC107]" },
-                { id: "elective", label: "Elective", bg: "bg-[#B3D4FF]" },
-                { id: "seminar", label: "Seminar", bg: "bg-[#FFA6D6]" },
-                { id: "lab", label: "Lab / Practicum", bg: "bg-[#5EEAD4]" },
-              ].map((type) => (
-                <div 
-                  key={type.id}
-                  onClick={() => setEventType(type.id)}
-                  className={`cursor-pointer border-[3px] border-black p-2 flex items-center gap-2 hover:-translate-y-1 transition-transform shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                    ${eventType === type.id ? 'ring-2 ring-black ring-offset-1' : ''}
-                  `}
-                >
-                  <div className={`w-3 h-3 border-[2px] border-black ${type.bg}`} />
-                  <span className="font-black text-[9px] uppercase">{type.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-2 mt-4">
-            {initialData && (
-              <button 
-                type="button"
-                onClick={onDelete}
-                className="flex items-center justify-center bg-[#FFB3C1] hover:bg-red-400 border-[3px] border-black p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-              >
-                <Trash2 className="w-5 h-5 text-black" strokeWidth={2.5} />
-              </button>
-            )}
-            <button 
-              type="submit"
-              className="flex-1 bg-[#B3FFB3] hover:bg-[#8FFFE1] border-[3px] border-black p-2 font-black text-sm uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-            >
-              {initialData ? 'Save' : 'Add to Schedule'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+type ScheduleSlotRow = {
+  id: string;
+  user_id: string;
+  course_id: string | null;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  room: string | null;
+  courses: {
+    name: string;
+    color: string | null;
+    type: string | null;
+  } | null;
 };
 
-// =========================================
-// 2. MAIN PEAK HOURS COMPONENT
-// =========================================
-const PeakHoursSchedule = () => {
-  const timeSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
-  const todayIndex = new Date().getDay(); 
+type NewSlotForm = {
+  courseId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  room: string;
+};
 
-  const days = [
-    { id: 1, name: "MON", isToday: todayIndex === 1 },
-    { id: 2, name: "TUE", isToday: todayIndex === 2 },
-    { id: 3, name: "WED", isToday: todayIndex === 3 },
-    { id: 4, name: "THU", isToday: todayIndex === 4 },
-    { id: 5, name: "FRI", isToday: todayIndex === 5 },
-    { id: 6, name: "SAT", isToday: todayIndex === 6 },
-    { id: 7, name: "SUN", isToday: todayIndex === 0 },
-  ];
+const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
+const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"] as const;
+const DEFAULT_END_TIME = "09:00";
 
-  const [scheduleData, setScheduleData] = useState([
-    { id: 1, day: 1, time: "08:00", course: "ALGORITHM", type: "major", color: "bg-[#FFC107]" },
-    { id: 2, day: 3, time: "10:00", course: "CALCULUS", type: "major", color: "bg-[#FFC107]" },
-    { id: 3, day: 2, time: "13:00", course: "WEB DEV LAB", type: "lab", color: "bg-[#5EEAD4]" },
-    { id: 4, day: 5, time: "10:00", course: "TECH SEMINAR", type: "seminar", color: "bg-[#FFA6D6]" },
-  ]);
+function normalizeClock(value: string): string {
+  return value.slice(0, 5);
+}
 
-  const [modalState, setModalState] = useState({
-    isOpen: false,
-    dayId: null as number | null,
-    time: null as string | null,
-    editingId: null as number | null,
-    initialData: null as any
+function addOneHour(time: string): string {
+  const [hour] = time.split(":").map(Number);
+  const nextHour = Math.min(hour + 1, 17);
+  return `${String(nextHour).padStart(2, "0")}:00`;
+}
+
+function minutesFromClock(time: string): number {
+  const [hour, minute] = normalizeClock(time).split(":").map(Number);
+  return hour * 60 + minute;
+}
+
+function toGridRowStart(time: string): number {
+  const minutes = minutesFromClock(time);
+  return Math.max(1, Math.floor((minutes - 8 * 60) / 60) + 1);
+}
+
+function toGridRowEnd(startTime: string, endTime: string): number {
+  const start = toGridRowStart(startTime);
+  const span = Math.max(1, Math.ceil((minutesFromClock(endTime) - minutesFromClock(startTime)) / 60));
+  return start + span;
+}
+
+function colorByType(type: string | null): string {
+  const normalized = (type ?? "").toUpperCase();
+  if (normalized === "ELECTIVE") return "bg-[#B3D4FF]";
+  if (normalized === "LAB") return "bg-[#5EEAD4]";
+  if (normalized === "SEMINAR") return "bg-[#FFA6D6]";
+  return "bg-[#FFC107]";
+}
+
+export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
+  const { user } = useAuth();
+  const [slots, setSlots] = useState<ScheduleSlotRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [savingSlot, setSavingSlot] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [form, setForm] = useState<NewSlotForm>({
+    courseId: "",
+    dayOfWeek: 0,
+    startTime: "08:00",
+    endTime: DEFAULT_END_TIME,
+    room: "",
   });
+  const [showForm, setShowForm] = useState(false);
 
-  const getEvent = (dayId: number, time: string) => {
-    return scheduleData.find((s) => s.day === dayId && s.time === time);
-  };
-
-  const handleCellClick = (dayId: number, time: string, existingEvent: any) => {
-    setModalState({
-      isOpen: true,
-      dayId: dayId,
-      time: time,
-      editingId: existingEvent ? existingEvent.id : null,
-      initialData: existingEvent || null
-    });
-  };
-
-  const handleSaveEvent = (data: any) => {
-    if (modalState.editingId) {
-      setScheduleData(scheduleData.map(ev => ev.id === modalState.editingId ? { ...ev, ...data } : ev));
-    } else {
-      setScheduleData([...scheduleData, { id: Date.now(), ...data }]);
+  const loadSlots = useCallback(async () => {
+    if (!user) {
+      setSlots([]);
+      setLoading(false);
+      return;
     }
-    setModalState({ ...modalState, isOpen: false });
-  };
 
-  const handleDeleteEvent = () => {
-    setScheduleData(scheduleData.filter(ev => ev.id !== modalState.editingId));
-    setModalState({ ...modalState, isOpen: false });
-  };
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("schedule_slots")
+      .select("id, user_id, course_id, day_of_week, start_time, end_time, room, courses(name, color, type)")
+      .eq("user_id", user.id)
+      .order("day_of_week", { ascending: true })
+      .order("start_time", { ascending: true });
+
+    setLoading(false);
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+
+    setErrorMessage(null);
+    setSlots(((data as ScheduleSlotRow[] | null) ?? []).map((slot) => ({
+      ...slot,
+      start_time: normalizeClock(slot.start_time),
+      end_time: normalizeClock(slot.end_time),
+    })));
+  }, [user]);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => void loadSlots(), [loadSlots]);
+
+  const openCreate = useCallback((dayOfWeek: number, startTime: string) => {
+    setForm({
+      courseId: courses[0]?.id ?? "",
+      dayOfWeek,
+      startTime,
+      endTime: addOneHour(startTime),
+      room: "",
+    });
+    setShowForm(true);
+  }, [courses]);
+
+  const saveSlot = useCallback(async () => {
+    if (!user || !form.courseId) return;
+    if (minutesFromClock(form.endTime) <= minutesFromClock(form.startTime)) {
+      setErrorMessage("End time must be later than start time.");
+      return;
+    }
+
+    setSavingSlot(true);
+    const { error } = await supabase.from("schedule_slots").insert({
+      user_id: user.id,
+      course_id: form.courseId,
+      day_of_week: form.dayOfWeek,
+      start_time: form.startTime,
+      end_time: form.endTime,
+      room: form.room || null,
+    });
+    setSavingSlot(false);
+
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+
+    setShowForm(false);
+    setErrorMessage(null);
+    await loadSlots();
+  }, [form, loadSlots, user]);
+
+  const deleteSlot = useCallback(async (slotId: string) => {
+    setDeletingId(slotId);
+    const { error } = await supabase.from("schedule_slots").delete().eq("id", slotId);
+    setDeletingId(null);
+
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+
+    setErrorMessage(null);
+    await loadSlots();
+  }, [loadSlots]);
+
+  const blocks = useMemo(
+    () =>
+      slots.map((slot) => ({
+        ...slot,
+        rowStart: toGridRowStart(slot.start_time),
+        rowEnd: toGridRowEnd(slot.start_time, slot.end_time),
+      })),
+    [slots],
+  );
 
   return (
-    <div className="w-full bg-[#EEF6F6] p-4 sm:p-6 border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-sans">
-      
-      {/* HEADER: Tombol navigasi sudah dihapus */}
-      <div className="mb-4 sm:mb-6">
+    <div className="w-full bg-[#EEF6F6] p-4 sm:p-6 border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl sm:text-3xl font-black text-black uppercase tracking-tighter">
           Estimation of Peak Hours
         </h2>
+        {loading && <span className="font-black text-xs uppercase text-black/60">Loading...</span>}
       </div>
 
-      {/* TABEL JADWAL (Horizontal Scrollable for Mobile) */}
-      <div className="w-full overflow-x-auto bg-white border-[3px] border-black scrollbar-hide">
-        <div className="min-w-[750px]">
-          
-          {/* Header Baris Hari (MON-SUN) dengan z-20 */}
-          <div className="grid grid-cols-[70px_repeat(7,1fr)] border-b-[3px] border-black bg-white sticky top-0 z-20">
-            <div className="border-r-[3px] border-black p-2 bg-gray-100 sticky left-0 z-30"></div> 
-            {days.map((day) => (
-              <div 
-                key={day.id} 
-                className={`border-r-[3px] border-black last:border-r-0 p-2 flex flex-col items-center justify-center font-black text-xs sm:text-sm tracking-wide
-                  ${day.isToday ? 'bg-[#FF4D4D] text-white' : 'text-black bg-white'}
-                `}
-              >
-                <span>{day.name}</span>
-                {day.isToday && <span className="text-[8px] uppercase tracking-widest opacity-80 mt-0.5">Today</span>}
+      {errorMessage && (
+        <div className="mb-4 border-2 border-black bg-[#FFB3C1] p-2 font-bold text-xs text-black">
+          {errorMessage}
+        </div>
+      )}
+
+      <div className="overflow-x-auto border-[3px] border-black bg-white">
+        <div className="min-w-[860px]">
+          <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))] border-b-[3px] border-black bg-gray-50">
+            <div className="border-r-[3px] border-black p-2" />
+            {DAYS.map((day) => (
+              <div key={day} className="border-r-[3px] last:border-r-0 border-black p-2 text-center font-black text-xs uppercase">
+                {day}
               </div>
             ))}
           </div>
 
-          {/* Baris Waktu (08:00 - 16:00) */}
-          {timeSlots.map((time, idx) => (
-            <div key={time} className={`grid grid-cols-[70px_repeat(7,1fr)] ${idx !== timeSlots.length - 1 ? 'border-b-[3px] border-black' : ''}`}>
-              
-              <div className="border-r-[3px] border-black p-2 flex items-center justify-center font-black text-xs text-black bg-gray-50 sticky left-0 z-10 shadow-[2px_0px_0px_0px_rgba(0,0,0,0.1)]">
-                {time}
+          <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))]">
+            <div className="grid grid-rows-9 border-r-[3px] border-black">
+              {TIME_SLOTS.map((time) => (
+                <div key={time} className="h-14 border-b-[3px] last:border-b-0 border-black px-2 flex items-center font-black text-xs bg-gray-50">
+                  {time}
+                </div>
+              ))}
+            </div>
+
+            <div className="col-span-7 relative">
+              <div className="grid grid-cols-7 grid-rows-9">
+                {DAYS.map((_, dayIndex) =>
+                  TIME_SLOTS.map((time) => (
+                    <button
+                      key={`${dayIndex}-${time}`}
+                      onClick={() => openCreate(dayIndex, time)}
+                      className="h-14 border-b-[3px] border-r-[3px] last:border-r-0 border-black bg-white hover:bg-gray-50 transition-colors"
+                      aria-label={`Add slot on ${DAYS[dayIndex]} at ${time}`}
+                    />
+                  )),
+                )}
               </div>
 
-              {/* Sel Grid Jadwal per Hari */}
-              {days.map((day) => {
-                const event = getEvent(day.id, time);
-                const isBreakTime = time === "12:00"; 
-
-                return (
-                  <div 
-                    key={`${day.id}-${time}`} 
-                    onClick={() => handleCellClick(day.id, time, event)}
-                    className={`border-r-[3px] border-black last:border-r-0 p-1 flex items-center justify-center min-h-[45px] cursor-pointer transition-colors hover:bg-gray-100
-                      ${isBreakTime && !event ? 'bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#f3f4f6_5px,#f3f4f6_10px)]' : ''}
-                      ${day.isToday && !event && !isBreakTime ? 'bg-red-50/30' : ''}
-                    `}
+              <div className="pointer-events-none absolute inset-0 grid grid-cols-7 grid-rows-9">
+                {blocks.map((slot) => (
+                  <div
+                    key={slot.id}
+                    style={{
+                      gridColumnStart: slot.day_of_week + 1,
+                      gridRowStart: slot.rowStart,
+                      gridRowEnd: slot.rowEnd,
+                    }}
+                    className={`pointer-events-auto m-1 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-2 ${colorByType(slot.courses?.type)}`}
                   >
-                    {event && (
-                      <div 
-                        className={`w-full h-full flex flex-col items-center justify-center px-1 py-1 border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-[1px] transition-transform ${event.color}`}
-                        title={`${event.course} (${event.type})`}
-                      >
-                        <span className="font-black text-[9px] sm:text-[10px] text-black uppercase text-center leading-tight line-clamp-2">
-                          {event.course}
-                        </span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-black text-[10px] uppercase leading-tight">{slot.courses?.name ?? "Unknown"}</p>
+                        <p className="font-bold text-[10px] mt-1">{slot.start_time}–{slot.end_time}</p>
+                        {slot.room && <p className="font-bold text-[10px] mt-1">Room: {slot.room}</p>}
                       </div>
-                    )}
+                      <button
+                        onClick={() => void deleteSlot(slot.id)}
+                        disabled={deletingId === slot.id}
+                        className="w-5 h-5 flex items-center justify-center border-2 border-black bg-white font-black text-[10px]"
+                        aria-label="Delete slot"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
-      {/* LEGEND (Keterangan Warna) */}
-      <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-4 sm:mt-5 px-1">
-        {[
-          { label: "MAJOR COURSE", color: "bg-[#FFC107]" },
-          { label: "ELECTIVE", color: "bg-[#B3D4FF]" },
-          { label: "LAB / PRACTICUM", color: "bg-[#5EEAD4]" },
-          { label: "SEMINAR", color: "bg-[#FFA6D6]" },
-        ].map((item) => (
-          <div key={item.label} className="flex items-center gap-1.5">
-            <div className={`w-3 h-3 sm:w-4 sm:h-4 border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] ${item.color}`}></div>
-            <span className="font-black text-[9px] sm:text-xs text-black uppercase tracking-wide">{item.label}</span>
-          </div>
-        ))}
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2"><span className="w-3 h-3 border border-black bg-[#FFC107]" /><span className="font-black text-[10px]">LECTURE</span></div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 border border-black bg-[#B3D4FF]" /><span className="font-black text-[10px]">ELECTIVE</span></div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 border border-black bg-[#5EEAD4]" /><span className="font-black text-[10px]">LAB</span></div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 border border-black bg-[#FFA6D6]" /><span className="font-black text-[10px]">SEMINAR</span></div>
       </div>
 
-      {/* RENDER MODAL */}
-      {modalState.isOpen && (
-        <ScheduleModal 
-          defaultDay={modalState.dayId}
-          defaultTime={modalState.time}
-          initialData={modalState.initialData}
-          onClose={() => setModalState({ ...modalState, isOpen: false })}
-          onSave={handleSaveEvent}
-          onDelete={handleDeleteEvent}
-        />
-      )}
+      {showForm && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="w-full max-w-md border-[3px] border-black bg-white p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-black text-sm uppercase">Add Schedule Slot</h3>
+              <button
+                onClick={() => setShowForm(false)}
+                className="p-1 border-2 border-black bg-white"
+                aria-label="Close form"
+              >
+                <X className="w-4 h-4" strokeWidth={3} />
+              </button>
+            </div>
 
+            <div className="space-y-3">
+              <div>
+                <label className="block font-black text-[10px] uppercase mb-1">Course</label>
+                <select
+                  value={form.courseId}
+                  onChange={(event) => setForm((prev) => ({ ...prev, courseId: event.target.value }))}
+                  className="w-full border-2 border-black px-2 py-2 font-bold text-sm"
+                >
+                  {courses.length === 0 ? (
+                    <option value="">No courses available</option>
+                  ) : (
+                    courses.map((course) => (
+                      <option key={course.id} value={course.id}>{course.name}</option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block font-black text-[10px] uppercase mb-1">Day</label>
+                  <select
+                    value={form.dayOfWeek}
+                    onChange={(event) => setForm((prev) => ({ ...prev, dayOfWeek: Number(event.target.value) }))}
+                    className="w-full border-2 border-black px-2 py-2 font-bold text-sm"
+                  >
+                    {DAYS.map((day, index) => (
+                      <option key={day} value={index}>{day}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-black text-[10px] uppercase mb-1">Start</label>
+                  <input
+                    type="time"
+                    value={form.startTime}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, startTime: event.target.value, endTime: addOneHour(event.target.value) }))
+                    }
+                    className="w-full border-2 border-black px-2 py-2 font-bold text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block font-black text-[10px] uppercase mb-1">End</label>
+                  <input
+                    type="time"
+                    value={form.endTime}
+                    onChange={(event) => setForm((prev) => ({ ...prev, endTime: event.target.value }))}
+                    className="w-full border-2 border-black px-2 py-2 font-bold text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-black text-[10px] uppercase mb-1">Room (optional)</label>
+                <input
+                  type="text"
+                  value={form.room}
+                  onChange={(event) => setForm((prev) => ({ ...prev, room: event.target.value }))}
+                  className="w-full border-2 border-black px-2 py-2 font-bold text-sm"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => void saveSlot()}
+              disabled={savingSlot || courses.length === 0}
+              className="mt-4 w-full border-[3px] border-black bg-[#B3FFB3] py-2 font-black text-xs uppercase disabled:opacity-60"
+            >
+              {savingSlot ? "Saving..." : "Save Slot"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default PeakHoursSchedule;
+}

@@ -1,83 +1,221 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { User, Mail, GraduationCap, BookOpen, Save, Camera, Clock, Target } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { User, Mail, GraduationCap, BookOpen, Save, Camera, Clock, Target } from "lucide-react";
+import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 
-interface Profile {
-  name: string;
+type ProfileForm = {
+  full_name: string;
   email: string;
   university: string;
   major: string;
   bio: string;
-  avatar: string;
-  studyGoal: number;
-  preferredTime: string;
-}
-
-const DEFAULT_PROFILE: Profile = {
-  name: 'Alfian Ramadani',
-  email: '11251068@student.itk.ac.id',
-  university: 'Institut Teknologi kalimantan',
-  major: 'Informatika',
-  bio: 'Computer science student passionate about web development and UI design.',
-  avatar: 'A',
-  studyGoal: 4,
-  preferredTime: 'evening',
+  avatar_url: string | null;
+  daily_study_goal_hours: number;
+  preferred_study_time: "morning" | "afternoon" | "evening" | "night";
 };
 
-const STORAGE_KEY = 'puff-pastry-profile';
-
-function loadProfile(): Profile {
-  if (typeof window === 'undefined') return DEFAULT_PROFILE;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...DEFAULT_PROFILE, ...JSON.parse(raw) };
-  } catch { /* fallback */ }
-  return DEFAULT_PROFILE;
-}
-
-function saveProfile(p: Profile) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
-}
+const DEFAULT_PROFILE: ProfileForm = {
+  full_name: "",
+  email: "",
+  university: "",
+  major: "",
+  bio: "",
+  avatar_url: null,
+  daily_study_goal_hours: 4,
+  preferred_study_time: "evening",
+};
 
 const TIME_OPTIONS = [
-  { value: 'morning', label: 'Morning (6–12)', color: 'bg-[#FFC107]' },
-  { value: 'afternoon', label: 'Afternoon (12–17)', color: 'bg-[#B3FFB3]' },
-  { value: 'evening', label: 'Evening (17–22)', color: 'bg-[#B3D4FF]' },
-  { value: 'night', label: 'Night (22–6)', color: 'bg-[#E8D5FF]' },
+  { value: "morning", label: "Morning (6-12)", color: "bg-[#FFC107]" },
+  { value: "afternoon", label: "Afternoon (12-17)", color: "bg-[#B3FFB3]" },
+  { value: "evening", label: "Evening (17-22)", color: "bg-[#B3D4FF]" },
+  { value: "night", label: "Night (22-6)", color: "bg-[#E8D5FF]" },
 ];
 
 export default function ProfileSettingsPage() {
-  const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE);
+  const { user, refreshProfile } = useAuth();
+  const [form, setForm] = useState<ProfileForm>(DEFAULT_PROFILE);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [editingAvatar, setEditingAvatar] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setProfile(loadProfile());
-  }, []);
+    if (!user) return;
 
-  useEffect(() => {
-    if (!saved) return;
-    const t = setTimeout(() => setSaved(false), 2000);
-    return () => clearTimeout(t);
-  }, [saved]);
+    const loadUserProfile = async () => {
+      setLoadingProfile(true);
+      setErrorMessage(null);
 
-  const update = useCallback((field: keyof Profile, value: string | number) => {
-    setProfile((p) => ({ ...p, [field]: value }));
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        setErrorMessage(error.message);
+        setLoadingProfile(false);
+        return;
+      }
+
+      if (!data) {
+        const { error: upsertError } = await supabase
+          .from("profiles")
+          .upsert({
+            id: user.id,
+            email: user.email ?? "",
+            full_name: user.user_metadata?.full_name ?? "",
+            avatar_url: user.user_metadata?.avatar_url ?? null,
+            daily_study_goal_hours: 4,
+            preferred_study_time: "evening",
+          }, { onConflict: "id" });
+
+        if (upsertError) {
+          setErrorMessage(upsertError.message);
+          setLoadingProfile(false);
+          return;
+        }
+
+        const { data: upsertedRow, error: refetchError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (refetchError || !upsertedRow) {
+          setErrorMessage(refetchError?.message ?? "Unable to load profile data.");
+          setLoadingProfile(false);
+          return;
+        }
+
+        setForm({
+          full_name: upsertedRow.full_name ?? "",
+          email: upsertedRow.email ?? user.email ?? "",
+          university: upsertedRow.university ?? "",
+          major: upsertedRow.major ?? "",
+          bio: upsertedRow.bio ?? "",
+          avatar_url: upsertedRow.avatar_url ?? null,
+          daily_study_goal_hours: upsertedRow.daily_study_goal_hours ?? 4,
+          preferred_study_time: (upsertedRow.preferred_study_time ?? "evening") as ProfileForm["preferred_study_time"],
+        });
+        setLoadingProfile(false);
+        return;
+      }
+
+      setForm({
+        full_name: data.full_name ?? "",
+        email: data.email ?? user.email ?? "",
+        university: data.university ?? "",
+        major: data.major ?? "",
+        bio: data.bio ?? "",
+        avatar_url: data.avatar_url ?? null,
+        daily_study_goal_hours: data.daily_study_goal_hours ?? 4,
+        preferred_study_time: (data.preferred_study_time ?? "evening") as ProfileForm["preferred_study_time"],
+      });
+      setLoadingProfile(false);
+    };
+
+    void loadUserProfile();
+  }, [user]);
+
+  const avatarInitial = useMemo(() => {
+    const source = form.full_name || form.email || "S";
+    return source.charAt(0).toUpperCase();
+  }, [form.email, form.full_name]);
+
+  const update = useCallback((field: keyof ProfileForm, value: string | number | null) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
     setSaved(false);
   }, []);
 
-  const handleSave = useCallback(() => {
-    setProfile((current) => {
-      saveProfile(current);
-      return current;
-    });
+  const handleSave = useCallback(async () => {
+    if (!user) return;
+
+    setSaving(true);
+    setErrorMessage(null);
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: form.full_name,
+        bio: form.bio,
+        university: form.university,
+        major: form.major,
+        daily_study_goal_hours: form.daily_study_goal_hours,
+        preferred_study_time: form.preferred_study_time,
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      setErrorMessage(error.message);
+      setSaving(false);
+      return;
+    }
+
+    await refreshProfile();
+    setSaving(false);
     setSaved(true);
-  }, []);
+    window.setTimeout(() => setSaved(false), 2000);
+  }, [form, refreshProfile, user]);
+
+  const handleAvatarUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (!user) return;
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      setUploadingAvatar(true);
+      setErrorMessage(null);
+
+      const extension = file.name.split(".").pop() ?? "png";
+      const filePath = `${user.id}/avatar.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        setErrorMessage(uploadError.message);
+        setUploadingAvatar(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: urlData.publicUrl })
+        .eq("id", user.id);
+
+      if (updateError) {
+        setErrorMessage(updateError.message);
+        setUploadingAvatar(false);
+        return;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        avatar_url: urlData.publicUrl,
+      }));
+      await refreshProfile();
+      setUploadingAvatar(false);
+      event.target.value = "";
+    },
+    [refreshProfile, user],
+  );
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-8 px-4 md:px-0 space-y-8">
+    <ProtectedRoute>
+      <div className="w-full max-w-4xl mx-auto py-8 px-4 md:px-0 space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -86,60 +224,72 @@ export default function ProfileSettingsPage() {
         </div>
         <button
           onClick={handleSave}
+          disabled={loadingProfile || saving}
           className={`flex items-center gap-2 px-5 py-3 border-[3px] border-black font-black text-sm uppercase tracking-wide transition-all outline-none focus-visible:ring-2 focus-visible:ring-black ${
             saved
               ? 'bg-[#B3FFB3] shadow-none translate-x-[2px] translate-y-[2px]'
-              : 'bg-[#FFC107] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]'
+              : 'bg-[#FFC107] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] disabled:opacity-60 disabled:cursor-not-allowed'
           }`}
         >
           <Save className="w-4 h-4" strokeWidth={2.5} />
-          {saved ? 'Saved!' : 'Save'}
+          {saving ? "Saving..." : saved ? "Saved!" : "Save"}
         </button>
       </div>
+
+      {errorMessage && (
+        <div className="border-[3px] border-black bg-[#FFB3C1] px-4 py-3">
+          <p className="font-black text-xs uppercase tracking-wide text-black">Error: {errorMessage}</p>
+        </div>
+      )}
+
+      {uploadingAvatar && (
+        <div className="border-[3px] border-black bg-[#B3D4FF] px-4 py-3">
+          <p className="font-black text-xs uppercase tracking-wide text-black">Uploading avatar...</p>
+        </div>
+      )}
 
       {/* Avatar Card */}
       <div className="bg-[#FFB3C1] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="relative group">
             <div className="w-24 h-24 bg-[#FFC107] border-[3px] border-black flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <span className="font-black text-4xl text-black">{profile.avatar}</span>
+              {form.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.avatar_url} alt="Profile avatar" className="h-full w-full object-cover" />
+              ) : (
+                <span className="font-black text-4xl text-black">{avatarInitial}</span>
+              )}
             </div>
-            {editingAvatar ? (
-              <div className="absolute -bottom-2 -right-2 flex items-center gap-1">
-                <input
-                  autoFocus
-                  maxLength={1}
-                  defaultValue={profile.avatar}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === 'Escape') {
-                      const v = (e.target as HTMLInputElement).value.trim();
-                      if (v) update('avatar', v.charAt(0).toUpperCase());
-                      setEditingAvatar(false);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    const v = e.target.value.trim();
-                    if (v) update('avatar', v.charAt(0).toUpperCase());
-                    setEditingAvatar(false);
-                  }}
-                  className="w-10 h-10 text-center bg-white border-[3px] border-black font-black text-lg text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] outline-none uppercase focus-visible:ring-2 focus-visible:ring-[#FFC107]"
-                  aria-label="Avatar initial"
-                />
-              </div>
-            ) : (
-              <button
-                onClick={() => setEditingAvatar(true)}
-                className="absolute -bottom-2 -right-2 p-2 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[1px] active:translate-y-[1px] transition-all outline-none focus-visible:ring-2 focus-visible:ring-black"
-                aria-label="Change avatar initial"
-              >
-                <Camera className="w-4 h-4 text-black" strokeWidth={2.5} />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loadingProfile || uploadingAvatar}
+              className="absolute -bottom-2 -right-2 p-2 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[1px] active:translate-y-[1px] transition-all outline-none focus-visible:ring-2 focus-visible:ring-black disabled:opacity-60 disabled:cursor-not-allowed"
+              aria-label="Upload avatar"
+            >
+              <Camera className="w-4 h-4 text-black" strokeWidth={2.5} />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
           </div>
           <div className="text-center sm:text-left">
-            <h3 className="font-black text-xl text-black">{profile.name}</h3>
-            <p className="font-bold text-sm text-black/60">{profile.email}</p>
-            <p className="font-bold text-sm text-black/60">{profile.university} — {profile.major}</p>
+            {loadingProfile ? (
+              <>
+                <div className="h-6 w-48 animate-pulse bg-black/10" />
+                <div className="mt-2 h-4 w-64 animate-pulse bg-black/10" />
+              </>
+            ) : (
+              <>
+                <h3 className="font-black text-xl text-black">{form.full_name || "Unnamed user"}</h3>
+                <p className="font-bold text-sm text-black/60">{form.email}</p>
+                <p className="font-bold text-sm text-black/60">{form.university} — {form.major}</p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -157,8 +307,9 @@ export default function ProfileSettingsPage() {
             <input
               id="profile-name"
               type="text"
-              value={profile.name}
-              onChange={(e) => update('name', e.target.value)}
+              value={form.full_name}
+              onChange={(e) => update("full_name", e.target.value)}
+              disabled={loadingProfile}
               className="w-full px-4 py-3 bg-[#FFFDF7] border-[3px] border-black font-bold text-sm text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] outline-none focus:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] focus:translate-x-[1px] focus:translate-y-[1px] transition-all"
             />
           </div>
@@ -171,9 +322,9 @@ export default function ProfileSettingsPage() {
             <input
               id="profile-email"
               type="email"
-              value={profile.email}
-              onChange={(e) => update('email', e.target.value)}
-              className="w-full px-4 py-3 bg-[#FFFDF7] border-[3px] border-black font-bold text-sm text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] outline-none focus:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] focus:translate-x-[1px] focus:translate-y-[1px] transition-all"
+              value={form.email}
+              disabled
+              className="w-full px-4 py-3 bg-[#FFFDF7] border-[3px] border-black font-bold text-sm text-black/60 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] outline-none cursor-not-allowed"
             />
           </div>
 
@@ -181,8 +332,9 @@ export default function ProfileSettingsPage() {
             <label htmlFor="profile-bio" className="font-black text-xs text-black/60 uppercase tracking-wider block mb-2">Bio</label>
             <textarea
               id="profile-bio"
-              value={profile.bio}
-              onChange={(e) => update('bio', e.target.value)}
+              value={form.bio}
+              onChange={(e) => update("bio", e.target.value)}
+              disabled={loadingProfile}
               rows={3}
               className="w-full px-4 py-3 bg-[#FFFDF7] border-[3px] border-black font-bold text-sm text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] outline-none focus:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] focus:translate-x-[1px] focus:translate-y-[1px] transition-all resize-none"
             />
@@ -201,8 +353,9 @@ export default function ProfileSettingsPage() {
             <input
               id="profile-university"
               type="text"
-              value={profile.university}
-              onChange={(e) => update('university', e.target.value)}
+              value={form.university}
+              onChange={(e) => update("university", e.target.value)}
+              disabled={loadingProfile}
               className="w-full px-4 py-3 bg-[#FFFDF7] border-[3px] border-black font-bold text-sm text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] outline-none focus:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] focus:translate-x-[1px] focus:translate-y-[1px] transition-all"
             />
           </div>
@@ -215,8 +368,9 @@ export default function ProfileSettingsPage() {
             <input
               id="profile-major"
               type="text"
-              value={profile.major}
-              onChange={(e) => update('major', e.target.value)}
+              value={form.major}
+              onChange={(e) => update("major", e.target.value)}
+              disabled={loadingProfile}
               className="w-full px-4 py-3 bg-[#FFFDF7] border-[3px] border-black font-bold text-sm text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] outline-none focus:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] focus:translate-x-[1px] focus:translate-y-[1px] transition-all"
             />
           </div>
@@ -242,12 +396,13 @@ export default function ProfileSettingsPage() {
                 type="range"
                 min={1}
                 max={12}
-                value={profile.studyGoal}
-                onChange={(e) => update('studyGoal', parseInt(e.target.value))}
+                value={form.daily_study_goal_hours}
+                onChange={(e) => update("daily_study_goal_hours", parseInt(e.target.value, 10))}
+                disabled={loadingProfile}
                 className="flex-1 accent-[#FFC107]"
               />
               <div className="w-14 h-14 bg-[#FFC107] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                <span className="font-black text-lg text-black">{profile.studyGoal}h</span>
+                <span className="font-black text-lg text-black">{form.daily_study_goal_hours}h</span>
               </div>
             </div>
           </div>
@@ -258,11 +413,12 @@ export default function ProfileSettingsPage() {
               {TIME_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => update('preferredTime', opt.value)}
+                  onClick={() => update("preferred_study_time", opt.value)}
+                  disabled={loadingProfile}
                   className={`px-3 py-2.5 border-[3px] border-black font-bold text-xs text-black uppercase tracking-wide transition-all outline-none focus-visible:ring-2 focus-visible:ring-black ${
-                    profile.preferredTime === opt.value
+                    form.preferred_study_time === opt.value
                       ? `${opt.color} shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]`
-                      : 'bg-[#FFFDF7] shadow-none hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                      : 'bg-[#FFFDF7] shadow-none hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-60 disabled:cursor-not-allowed'
                   }`}
                 >
                   {opt.label}
@@ -272,6 +428,7 @@ export default function ProfileSettingsPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

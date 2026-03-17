@@ -125,3 +125,23 @@ body {
     transition: none;
   }
 }
+
+@media print {
+  body.print-burnout-report * {
+    visibility: hidden !important;
+  }
+
+  body.print-burnout-report [data-print-burnout-report],
+  body.print-burnout-report [data-print-burnout-report] * {
+    visibility: visible !important;
+  }
+
+  body.print-burnout-report [data-print-burnout-report] {
+    position: absolute;
+    inset: 0;
+    max-width: 100%;
+    width: 100%;
+    border: 0;
+    box-shadow: none;
+  }
+}
