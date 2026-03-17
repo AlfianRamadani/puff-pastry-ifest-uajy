@@ -3,6 +3,7 @@ export interface Course {
   name: string;
   type: "LECTURE" | "LAB" | "SEMINAR" | "ELECTIVE";
   sks: number;
+  semester?: string | null;
 }
 
 export function getTotalSKS(courses: Course[]): number {

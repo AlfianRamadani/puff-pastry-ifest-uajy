@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import type { Course } from "./courseData";
@@ -44,6 +44,10 @@ type NewSlotForm = {
   room: string;
 };
 
+type DueTaskRow = {
+  due_date: string;
+};
+
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"] as const;
 const DEFAULT_END_TIME = "09:00";
@@ -63,15 +67,12 @@ function minutesFromClock(time: string): number {
   return hour * 60 + minute;
 }
 
-function toGridRowStart(time: string): number {
-  const minutes = minutesFromClock(time);
-  return Math.max(1, Math.floor((minutes - 8 * 60) / 60) + 1);
-}
-
-function toGridRowEnd(startTime: string, endTime: string): number {
-  const start = toGridRowStart(startTime);
-  const span = Math.max(1, Math.ceil((minutesFromClock(endTime) - minutesFromClock(startTime)) / 60));
-  return start + span;
+function overlaps(startA: string, endA: string, startB: string, endB: string): boolean {
+  const aStart = minutesFromClock(startA);
+  const aEnd = minutesFromClock(endA);
+  const bStart = minutesFromClock(startB);
+  const bEnd = minutesFromClock(endB);
+  return aStart < bEnd && bStart < aEnd;
 }
 
 function colorByType(type: string | null): string {
@@ -82,6 +83,22 @@ function colorByType(type: string | null): string {
   return "bg-[#FFC107]";
 }
 
+function dayOfWeekFromIsoDate(iso: string): number {
+  const date = new Date(`${iso}T00:00:00`);
+  const jsDay = date.getDay();
+  return jsDay === 0 ? 6 : jsDay - 1;
+}
+
+function weekStartIso(): string {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString().slice(0, 10);
+}
+
 export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
   const { user } = useAuth();
   const [slots, setSlots] = useState<ScheduleSlot[]>([]);
@@ -89,6 +106,11 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savingSlot, setSavingSlot] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [dueWeightByDay, setDueWeightByDay] = useState<number[]>(Array(7).fill(0));
+  const [conflictingSlots, setConflictingSlots] = useState<ScheduleSlot[]>([]);
+  const [replaceConflicts, setReplaceConflicts] = useState(false);
+
   const [form, setForm] = useState<NewSlotForm>({
     courseId: "",
     dayOfWeek: 0,
@@ -96,7 +118,6 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
     endTime: DEFAULT_END_TIME,
     room: "",
   });
-  const [showForm, setShowForm] = useState(false);
 
   const loadSlots = useCallback(async () => {
     if (!user) {
@@ -106,52 +127,127 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
     }
 
     setLoading(true);
-    const { data, error } = await supabase
-      .from("schedule_slots")
-      .select("id, user_id, course_id, day_of_week, start_time, end_time, room, courses(name, color, type)")
-      .eq("user_id", user.id)
-      .order("day_of_week", { ascending: true })
-      .order("start_time", { ascending: true });
+    const today = new Date();
+    const sevenDaysLater = new Date(today);
+    sevenDaysLater.setDate(today.getDate() + 7);
+
+    const [slotsResult, dueTasksResult] = await Promise.all([
+      supabase
+        .from("schedule_slots")
+        .select("id, user_id, course_id, day_of_week, start_time, end_time, room, courses(name, color, type)")
+        .eq("user_id", user.id)
+        .order("day_of_week", { ascending: true })
+        .order("start_time", { ascending: true }),
+      supabase
+        .from("tasks")
+        .select("due_date")
+        .eq("user_id", user.id)
+        .neq("status", "done")
+        .gte("due_date", today.toISOString().slice(0, 10))
+        .lte("due_date", sevenDaysLater.toISOString().slice(0, 10)),
+    ]);
 
     setLoading(false);
-    if (error) {
-      setErrorMessage(error.message);
+    if (slotsResult.error || dueTasksResult.error) {
+      setErrorMessage(slotsResult.error?.message ?? dueTasksResult.error?.message ?? "Failed loading schedule");
       return;
     }
 
+    const nextSlots = ((slotsResult.data as ScheduleSlotRow[] | null) ?? []).map((slot) => ({
+      ...slot,
+      course: Array.isArray(slot.courses) ? (slot.courses[0] ?? null) : slot.courses,
+      start_time: normalizeClock(slot.start_time),
+      end_time: normalizeClock(slot.end_time),
+    }));
+    setSlots(nextSlots);
+
+    const dueCounts = Array(7).fill(0);
+    ((dueTasksResult.data as DueTaskRow[] | null) ?? []).forEach((task) => {
+      if (!task.due_date) return;
+      const dayIndex = dayOfWeekFromIsoDate(task.due_date);
+      dueCounts[dayIndex] += 1;
+    });
+    setDueWeightByDay(dueCounts);
+
     setErrorMessage(null);
-    setSlots(
-      ((data as ScheduleSlotRow[] | null) ?? []).map((slot) => ({
-        ...slot,
-        course: Array.isArray(slot.courses) ? (slot.courses[0] ?? null) : slot.courses,
-        start_time: normalizeClock(slot.start_time),
-        end_time: normalizeClock(slot.end_time),
-      })),
-    );
   }, [user]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => void loadSlots(), [loadSlots]);
 
-  const openCreate = useCallback((dayOfWeek: number, startTime: string) => {
-    setForm({
-      courseId: courses[0]?.id ?? "",
-      dayOfWeek,
-      startTime,
-      endTime: addOneHour(startTime),
-      room: "",
-    });
-    setShowForm(true);
-  }, [courses]);
+  const openCreate = useCallback(
+    (dayOfWeek: number, startTime: string) => {
+      setForm({
+        courseId: courses[0]?.id ?? "",
+        dayOfWeek,
+        startTime,
+        endTime: addOneHour(startTime),
+        room: "",
+      });
+      setConflictingSlots([]);
+      setReplaceConflicts(false);
+      setShowForm(true);
+    },
+    [courses],
+  );
+
+  const conflictForForm = useCallback(
+    (draft: NewSlotForm) =>
+      slots.filter(
+        (slot) =>
+          slot.day_of_week === draft.dayOfWeek &&
+          overlaps(slot.start_time, slot.end_time, draft.startTime, draft.endTime),
+      ),
+    [slots],
+  );
+
+  const suggestNextFreeBlock = useCallback(
+    (dayOfWeek: number, fromTime: string): string => {
+      for (const time of TIME_SLOTS) {
+        if (minutesFromClock(time) < minutesFromClock(fromTime)) continue;
+        const end = addOneHour(time);
+        const hasConflict = slots.some(
+          (slot) => slot.day_of_week === dayOfWeek && overlaps(slot.start_time, slot.end_time, time, end),
+        );
+        if (!hasConflict) return time;
+      }
+      return fromTime;
+    },
+    [slots],
+  );
 
   const saveSlot = useCallback(async () => {
     if (!user || !form.courseId) return;
+
     if (minutesFromClock(form.endTime) <= minutesFromClock(form.startTime)) {
       setErrorMessage("End time must be later than start time.");
       return;
     }
 
+    const conflicts = conflictForForm(form);
+    if (conflicts.length > 0 && !replaceConflicts) {
+      setConflictingSlots(conflicts);
+      const names = conflicts.map((item) => item.course?.name ?? "Unknown course").join(", ");
+      setErrorMessage(`Schedule conflict with: ${names}. Adjust time or choose replace old slots.`);
+      return;
+    }
+
     setSavingSlot(true);
+
+    if (replaceConflicts && conflicts.length > 0) {
+      const conflictIds = conflicts.map((slot) => slot.id);
+      const { error: deleteConflictsError } = await supabase
+        .from("schedule_slots")
+        .delete()
+        .in("id", conflictIds)
+        .eq("user_id", user.id);
+      if (deleteConflictsError) {
+        setSavingSlot(false);
+        setErrorMessage(deleteConflictsError.message);
+        return;
+      }
+    }
+
     const { error } = await supabase.from("schedule_slots").insert({
       user_id: user.id,
       course_id: form.courseId,
@@ -160,6 +256,7 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
       end_time: form.endTime,
       room: form.room || null,
     });
+
     setSavingSlot(false);
 
     if (error) {
@@ -168,30 +265,82 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
     }
 
     setShowForm(false);
+    setReplaceConflicts(false);
+    setConflictingSlots([]);
     setErrorMessage(null);
     await loadSlots();
-  }, [form, loadSlots, user]);
+  }, [conflictForForm, form, loadSlots, replaceConflicts, user]);
 
-  const deleteSlot = useCallback(async (slotId: string) => {
-    setDeletingId(slotId);
-    const { error } = await supabase.from("schedule_slots").delete().eq("id", slotId);
-    setDeletingId(null);
+  const deleteSlot = useCallback(
+    async (slotId: string) => {
+      setDeletingId(slotId);
+      const { error } = await supabase.from("schedule_slots").delete().eq("id", slotId);
+      setDeletingId(null);
 
-    if (error) {
-      setErrorMessage(error.message);
-      return;
-    }
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
 
-    setErrorMessage(null);
-    await loadSlots();
-  }, [loadSlots]);
+      setErrorMessage(null);
+      await loadSlots();
+    },
+    [loadSlots],
+  );
+
+  const densityByDay = useMemo(() => {
+    const density = Array(7).fill(0);
+    slots.forEach((slot) => {
+      density[slot.day_of_week] += Math.max(1, minutesFromClock(slot.end_time) - minutesFromClock(slot.start_time)) / 60;
+    });
+    return density;
+  }, [slots]);
+
+  const heatByDay = useMemo(() => densityByDay.map((hours, idx) => Number((hours + dueWeightByDay[idx] * 0.7).toFixed(1))), [densityByDay, dueWeightByDay]);
+
+  const suggestions = useMemo(() => {
+    const all = DAYS.map((day, dayIdx) =>
+      TIME_SLOTS.map((time) => {
+        const occupied = slots.some((slot) => slot.day_of_week === dayIdx && overlaps(slot.start_time, slot.end_time, time, addOneHour(time)));
+        const score = (occupied ? 5 : 0) + dueWeightByDay[dayIdx] * 0.7;
+        return { day, time, score };
+      }),
+    ).flat();
+
+    return all.sort((a, b) => a.score - b.score).slice(0, 3);
+  }, [dueWeightByDay, slots]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const all = DAYS.map((day, dayIdx) =>
+      TIME_SLOTS.map((time) => {
+        const occupied = slots.some((slot) => slot.day_of_week === dayIdx && overlaps(slot.start_time, slot.end_time, time, addOneHour(time)));
+        const score = (occupied ? 5 : 0) + dueWeightByDay[dayIdx] * 0.7;
+        return { day, time, score };
+      }),
+    ).flat();
+
+    const overloadWindows = all.filter((item) => item.score >= 4.5).map((item) => `${item.day} ${item.time}`);
+
+    void supabase.from("schedule_load_metrics").upsert(
+      {
+        user_id: user.id,
+        week_start: weekStartIso(),
+        peak_blocks: slots.length,
+        avg_daily_load: Number((densityByDay.reduce((sum, val) => sum + val, 0) / 7).toFixed(2)),
+        overload_windows: overloadWindows,
+      },
+      { onConflict: "user_id,week_start" },
+    );
+  }, [densityByDay, dueWeightByDay, slots, user]);
 
   const blocks = useMemo(
     () =>
       slots.map((slot) => ({
         ...slot,
-        rowStart: toGridRowStart(slot.start_time),
-        rowEnd: toGridRowEnd(slot.start_time, slot.end_time),
+        rowStart: Math.max(1, Math.floor((minutesFromClock(slot.start_time) - 8 * 60) / 60) + 1),
+        rowEnd: Math.max(1, Math.floor((minutesFromClock(slot.end_time) - 8 * 60) / 60) + 1),
       })),
     [slots],
   );
@@ -204,6 +353,25 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
       <div className="mb-4 sm:mb-6 flex items-center justify-between">
         <h2 className="text-xl sm:text-3xl font-black text-black uppercase tracking-tighter">Estimation of Peak Hours</h2>
         {loading && <span className="font-black text-xs uppercase text-black/60">Loading...</span>}
+      </div>
+
+      <div className="mb-4 border-2 border-black bg-white p-3">
+        <p className="font-black text-xs uppercase tracking-wide">Weekly Heatmap Insight</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {DAYS.map((day, idx) => (
+            <span
+              key={day}
+              className={`px-2 py-1 border-2 border-black font-black text-[10px] uppercase ${heatByDay[idx] >= 5 ? "bg-[#FFB3C1]" : heatByDay[idx] >= 3 ? "bg-[#FFC107]" : "bg-[#B3FFB3]"}`}
+            >
+              {day}: {heatByDay[idx]}
+            </span>
+          ))}
+        </div>
+        {suggestions.length > 0 && (
+          <p className="mt-2 font-bold text-xs text-gray-700">
+            Suggested deep-work blocks: {suggestions.map((item) => `${item.day} ${item.time}`).join(" • ")}
+          </p>
+        )}
       </div>
 
       {errorMessage && <div className="mb-4 border-2 border-black bg-[#FFB3C1] p-2 font-bold text-xs">{errorMessage}</div>}
@@ -229,11 +397,12 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
               {dayHeaders.map((day) => {
                 const slot = blocks.find((block) => block.day_of_week === day.id - 1 && block.start_time === time);
                 const isBreakTime = time === "12:00";
+                const heat = heatByDay[day.id - 1];
                 return (
                   <div
                     key={`${day.id}-${time}`}
                     onClick={() => openCreate(day.id - 1, time)}
-                    className={`border-r-[3px] border-black last:border-r-0 p-1 flex items-center justify-center min-h-[45px] cursor-pointer transition-colors hover:bg-gray-100 ${isBreakTime && !slot ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#f3f4f6_5px,#f3f4f6_10px)]" : ""} ${day.isToday && !slot && !isBreakTime ? "bg-red-50/30" : ""}`}
+                    className={`border-r-[3px] border-black last:border-r-0 p-1 flex items-center justify-center min-h-[45px] cursor-pointer transition-colors hover:bg-gray-100 ${isBreakTime && !slot ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#f3f4f6_5px,#f3f4f6_10px)]" : ""} ${day.isToday && !slot && !isBreakTime ? "bg-red-50/30" : ""} ${!slot && heat >= 5 ? "bg-[#FFE3E3]" : ""}`}
                   >
                     {slot && (
                       <div className={`w-full h-full flex flex-col items-center justify-center px-1 py-1 border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-[1px] transition-transform ${colorByType(slot.course?.type ?? null)}`}>
@@ -275,7 +444,11 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-black uppercase text-black">Add Class</h3>
               <button
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  setShowForm(false);
+                  setReplaceConflicts(false);
+                  setConflictingSlots([]);
+                }}
                 className="hover:bg-red-100 p-1 border-2 border-transparent hover:border-black transition-all"
                 aria-label="Close form"
               >
@@ -346,6 +519,38 @@ export default function PeakHoursSchedule({ courses }: { courses: Course[] }) {
                 />
               </div>
             </div>
+
+            {conflictingSlots.length > 0 && (
+              <div className="mt-4 border-2 border-black bg-[#FFF0F0] p-2">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" strokeWidth={2.5} />
+                  <p className="font-black text-[10px] uppercase">Conflict detected</p>
+                </div>
+                <p className="font-bold text-[11px] mt-1">
+                  {conflictingSlots.map((slot) => `${slot.course?.name ?? "Unknown"} (${slot.start_time}-${slot.end_time})`).join(", ")}
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => {
+                      const suggested = suggestNextFreeBlock(form.dayOfWeek, form.startTime);
+                      setForm((prev) => ({ ...prev, startTime: suggested, endTime: addOneHour(suggested) }));
+                      setConflictingSlots([]);
+                      setReplaceConflicts(false);
+                      setErrorMessage(null);
+                    }}
+                    className="px-2 py-1 border-2 border-black bg-white font-black text-[10px] uppercase"
+                  >
+                    Auto adjust time
+                  </button>
+                  <button
+                    onClick={() => setReplaceConflicts(true)}
+                    className={`px-2 py-1 border-2 border-black font-black text-[10px] uppercase ${replaceConflicts ? "bg-[#B3FFB3]" : "bg-white"}`}
+                  >
+                    Replace old slot
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="mt-4">
               <button

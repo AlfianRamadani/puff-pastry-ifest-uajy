@@ -94,7 +94,8 @@
       "description": "Create a PostgreSQL function handle_new_user() and trigger on_auth_user_created (AFTER INSERT on auth.users). The function inserts: (1) profiles row: id=NEW.id, email=NEW.email, full_name from NEW.raw_user_meta_data->>'full_name' (populated by Google OAuth), avatar_url from raw_user_meta_data->>'avatar_url'. (2) streaks row: user_id=NEW.id, current_streak=0, longest_streak=0. (3) user_presence row: user_id=NEW.id, status='offline'. This ensures all required rows exist the moment a user signs up.",
       "dependencies": [
         "SETUP-02"
-      ]
+      ],
+      "mark": "done"
     },
     {
       "id": "AUTH-03",
@@ -319,6 +320,176 @@
       "mark": "done"
     },
     {
+      "id": "TASKS-08",
+      "category": "tasks",
+      "type": "both",
+      "priority": "critical",
+      "title": "Create true subtask system with progress roll-up",
+      "description": "Add table task_subtasks (id, task_id, user_id, title, status, progress, order_index, due_date, created_at, updated_at). In My Tasks, each task row can expand/collapse subtasks, add/edit/reorder subtasks, and show a progress bar. Parent task status must auto-sync: if all subtasks done => parent done; if at least one in progress => parent in_progress. Keep manual override with clear conflict handling.",
+      "dependencies": [
+        "TASKS-01",
+        "TASKS-04"
+      ],
+      "execution_steps": [
+        "Rilis MVP subtask CRUD + expand/collapse pada 20% user (feature flag).",
+        "Aktifkan progress roll-up otomatis dan validasi edge case status conflict.",
+        "Pantau completion rate 7 hari lalu rollout 100% jika stabil."
+      ],
+      "impact_goal": "Menaikkan task completion rate mingguan minimal +15% dari baseline.",
+      "definition_of_done": "Subtask dipakai pada >=40% task aktif dan error update status <1%.",
+      "rollout_phase": "P0",
+      "measurement_window": "7-14 days after release"
+    },
+    {
+      "id": "TASKS-09",
+      "category": "tasks",
+      "type": "both",
+      "priority": "high",
+      "title": "Recurring tasks and schedule templates",
+      "description": "Support recurring rules (daily, weekly, custom weekdays, monthly) via recurrence_rule fields and a generator job/edge function. In My Tasks, users can set recurrence when creating/editing tasks, skip one occurrence, or end a series. Ensure generated tasks preserve priority, course linkage, and reminder settings.",
+      "dependencies": [
+        "TASKS-02",
+        "TASKS-04"
+      ],
+      "execution_steps": [
+        "Implement recurrence engine mingguan terlebih dahulu (scope sempit).",
+        "Tambahkan UI skip/stop series + audit log perubahan seri.",
+        "Aktifkan daily/monthly recurrence setelah weekly stabil 2 sprint."
+      ],
+      "impact_goal": "Mengurangi pembuatan task berulang manual minimal 50%.",
+      "definition_of_done": "Recurring task berhasil generate otomatis tanpa duplikasi di 99% kasus.",
+      "rollout_phase": "P1",
+      "measurement_window": "7-14 days after release"
+    },
+    {
+      "id": "TASKS-10",
+      "category": "tasks",
+      "type": "both",
+      "priority": "high",
+      "title": "Deadline reminder engine with escalation",
+      "description": "Implement reminder configuration per task (e.g., 24h, 6h, 1h before due). Create Edge Function/cron worker to insert notifications reliably and avoid duplicates (idempotent key per task+schedule). Add escalation policy: overdue tasks create follow-up notifications until status changes. In UI, users can mute/snooze reminders per task.",
+      "dependencies": [
+        "TASKS-01",
+        "NOTIF-02"
+      ],
+      "execution_steps": [
+        "Buat reminder profile default (24h/6h/1h) + idempotency key.",
+        "Tambahkan snooze/mute per task dan overdue escalation terbatas.",
+        "Optimasi copy notifikasi berdasarkan CTR dan completion follow-up."
+      ],
+      "impact_goal": "Meningkatkan on-time completion minimal +20%.",
+      "definition_of_done": "Reminder delivery success >98% dan duplicate reminder <0.5%.",
+      "rollout_phase": "P1",
+      "measurement_window": "7-14 days after release"
+    },
+    {
+      "id": "TASKS-11",
+      "category": "tasks",
+      "type": "frontend",
+      "priority": "high",
+      "title": "Bulk actions and multi-select workflow",
+      "description": "Allow selecting multiple tasks in My Tasks and applying bulk updates: mark done, change priority, change due date, delete, assign course, and set reminder profile. Add safe confirmation for destructive actions and optimistic UI with rollback on failure.",
+      "dependencies": [
+        "TASKS-01",
+        "TASKS-03",
+        "TASKS-04"
+      ],
+      "execution_steps": [
+        "Rilis multi-select + bulk complete/priority dulu (core action).",
+        "Tambahkan bulk due-date/course assignment dengan rollback aman.",
+        "Tambahkan bulk delete setelah telemetry menunjukkan low error."
+      ],
+      "impact_goal": "Mengurangi waktu manajemen task massal minimal 40%.",
+      "definition_of_done": "Median waktu update 10 task turun signifikan vs baseline.",
+      "rollout_phase": "P1",
+      "measurement_window": "7-14 days after release"
+    },
+    {
+      "id": "TASKS-12",
+      "category": "tasks",
+      "type": "both",
+      "priority": "high",
+      "title": "Workload-aware smart prioritization",
+      "description": "Compute dynamic urgency score per task using due date distance, priority, estimated effort, and burnout/workload signals. Show sorted 'Focus Next' section in My Tasks and allow one-click apply of suggested order/priority. Persist user accept/reject decisions to improve recommendations over time.",
+      "dependencies": [
+        "TASKS-05",
+        "BURN-03"
+      ],
+      "execution_steps": [
+        "Mulai dengan scoring rule-based sederhana dan transparan.",
+        "Tambahkan panel Focus Next + tombol apply suggestion.",
+        "Kalibrasi bobot berdasarkan acceptance rate rekomendasi pengguna."
+      ],
+      "impact_goal": "Meningkatkan adopsi prioritas rekomendasi minimal 30%.",
+      "definition_of_done": "Focus Next dipakai mingguan oleh >=35% pengguna aktif Tasks.",
+      "rollout_phase": "P1",
+      "measurement_window": "7-14 days after release"
+    },
+    {
+      "id": "TASKS-13",
+      "category": "tasks",
+      "type": "both",
+      "priority": "medium",
+      "title": "Task detail modal with activity timeline",
+      "description": "Add task detail modal (without changing overall page design) containing full description, attachments, comments, subtask checklist, and change history timeline (status/priority/due_date edits). Store activity logs in task_activities table for audit and collaboration context.",
+      "dependencies": [
+        "TASKS-04",
+        "TASKS-08"
+      ],
+      "execution_steps": [
+        "Rilis task detail modal dengan informasi inti + timeline read-only.",
+        "Tambahkan komentar dan attachment upload versi dasar.",
+        "Aktifkan audit lengkap perubahan field penting."
+      ],
+      "impact_goal": "Menurunkan kebingungan konteks task saat revisi >=25%.",
+      "definition_of_done": "Pengguna dapat melacak siapa/apa/kapan perubahan task tanpa pindah halaman.",
+      "rollout_phase": "P2",
+      "measurement_window": "7-14 days after release"
+    },
+    {
+      "id": "TASKS-14",
+      "category": "tasks",
+      "type": "both",
+      "priority": "medium",
+      "title": "Kanban + list dual view for My Tasks",
+      "description": "Provide toggle between current table/list and Kanban columns (Not Started, In Progress, Overdue, Done). Support drag-and-drop across columns with immediate status update to Supabase and realtime sync. Keep search/filter/sort behavior consistent across both views.",
+      "dependencies": [
+        "TASKS-01",
+        "TASKS-05"
+      ],
+      "execution_steps": [
+        "Rilis toggle list/kanban tanpa drag-drop terlebih dahulu.",
+        "Tambahkan drag-drop antar kolom + optimistic update.",
+        "Samakan filter/sort/search lintas dua view sebelum GA."
+      ],
+      "impact_goal": "Menaikkan engagement harian di My Tasks minimal +12%.",
+      "definition_of_done": "Parity fitur list vs kanban 100% untuk operasi utama.",
+      "rollout_phase": "P2",
+      "measurement_window": "7-14 days after release"
+    },
+    {
+      "id": "TASKS-15",
+      "category": "tasks",
+      "type": "both",
+      "priority": "critical",
+      "title": "Harden My Tasks reliability and UX states",
+      "description": "Standardize loading/error/empty/success states for all My Tasks actions (create, update, delete, AI breakdown, reminder save). Add retry buttons, friendly error messages (no raw JWT/internal text), and telemetry for failed actions. Ensure mobile and desktop have identical capabilities, not reduced functionality.",
+      "dependencies": [
+        "TASKS-01",
+        "TASKS-08",
+        "TASKS-10"
+      ],
+      "execution_steps": [
+        "Audit semua state loading/error/empty/success lalu standardisasi komponen.",
+        "Tambahkan retry CTA + copy error human-readable di semua action kritikal.",
+        "Pantau failure funnel dan perbaiki 3 error paling sering tiap iterasi."
+      ],
+      "impact_goal": "Mengurangi task action failure rate minimal 30%.",
+      "definition_of_done": "Tidak ada raw error backend tampil ke user; semua action punya fallback jelas.",
+      "rollout_phase": "P0",
+      "measurement_window": "7-14 days after release"
+    },
+    {
       "id": "ACAD-01",
       "category": "academic_load",
       "type": "both",
@@ -380,6 +551,182 @@
       "mark": "done"
     },
     {
+      "id": "ACAD-06",
+      "category": "academic_load",
+      "type": "both",
+      "priority": "critical",
+      "title": "Conflict detection for course schedule slots",
+      "description": "Add server-side and client-side conflict validation so users cannot save overlapping schedule slots on the same day. Show exact conflicting course names and time ranges, and offer quick actions: 'adjust time' or 'replace old slot'. Persist conflict logs for debugging in schedule_conflicts table.",
+      "dependencies": [
+        "ACAD-04",
+        "ACAD-05"
+      ],
+      "execution_steps": [
+        "Implement hard-block overlap jadwal pada create/update slot.",
+        "Tambahkan UI conflict resolver dengan opsi ubah jam cepat.",
+        "Tambahkan conflict analytics untuk area waktu paling bermasalah."
+      ],
+      "impact_goal": "Mengurangi bentrok jadwal tersimpan hingga mendekati 0.",
+      "definition_of_done": "Tidak ada slot bentrok tersimpan tanpa override eksplisit.",
+      "rollout_phase": "P0",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "ACAD-07",
+      "category": "academic_load",
+      "type": "both",
+      "priority": "high",
+      "title": "Semester planning with credit cap guidance",
+      "description": "Introduce semester selector (current/next/custom) and allow assigning each course to a semester plan. Add configurable credit cap per semester and warn users when exceeding safe load thresholds. Show projected total credits and load risk badge per semester.",
+      "dependencies": [
+        "ACAD-01",
+        "ACAD-02"
+      ],
+      "execution_steps": [
+        "Rilis semester planner + credit cap warning dasar.",
+        "Tambahkan simulasi 2 semester ke depan dengan load indicator.",
+        "Sinkronkan rekomendasi beban dengan data burnout."
+      ],
+      "impact_goal": "Membantu pengguna merencanakan beban studi lebih seimbang per semester.",
+      "definition_of_done": "Planner menampilkan proyeksi kredit per semester dan warning overload real-time.",
+      "rollout_phase": "P1",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "ACAD-08",
+      "category": "academic_load",
+      "type": "both",
+      "priority": "high",
+      "title": "Academic Load to My Tasks auto-link workflow",
+      "description": "When a course is created or selected, allow users to quickly generate default task templates (weekly reading, assignment prep, exam prep) linked to that course. Ensure generated tasks inherit semester context and are visible in My Tasks filters by course.",
+      "dependencies": [
+        "ACAD-01",
+        "TASKS-01"
+      ],
+      "execution_steps": [
+        "Sediakan template task default per course saat onboarding course.",
+        "Tambahkan opsi custom template per user/major.",
+        "Ukur conversion course->task dan optimasi template paling efektif."
+      ],
+      "impact_goal": "Meningkatkan jumlah task terstruktur per course minimal +25%.",
+      "definition_of_done": "Setiap course baru bisa menghasilkan task template dalam <=2 klik.",
+      "rollout_phase": "P1",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "ACAD-09",
+      "category": "academic_load",
+      "type": "both",
+      "priority": "high",
+      "title": "Peak-hour analytics and load heatmap",
+      "description": "Replace static peak-hour view with computed weekly heatmap based on schedule density + task due pressure. Highlight overloaded windows (red), medium (orange), low (green) and suggest best free blocks for deep work. Store aggregate metrics for trend comparison week-to-week.",
+      "dependencies": [
+        "ACAD-04",
+        "BURN-01"
+      ],
+      "execution_steps": [
+        "Bangun heatmap dari densitas jadwal + due pressure mingguan.",
+        "Tambahkan rekomendasi slot deep work yang dapat dipilih user.",
+        "Tampilkan perbandingan sebelum/sesudah perubahan slot."
+      ],
+      "impact_goal": "Mengurangi jam puncak overload dan meningkatkan distribusi belajar merata.",
+      "definition_of_done": "Heatmap memberi rekomendasi yang dapat ditindaklanjuti langsung.",
+      "rollout_phase": "P1",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "ACAD-10",
+      "category": "academic_load",
+      "type": "frontend",
+      "priority": "medium",
+      "title": "Inline editing and undo for course table",
+      "description": "Allow direct inline edit for course name/type/credits with autosave, validation, and optimistic UI. Add 5-second undo toast after delete/update to reduce accidental data loss. Keep keyboard-first flow (tab/enter/esc) for fast data entry.",
+      "dependencies": [
+        "ACAD-01",
+        "ACAD-02",
+        "ACAD-03"
+      ],
+      "execution_steps": [
+        "Implement inline edit keyboard-first untuk field utama.",
+        "Tambahkan undo 5 detik untuk update/delete kritis.",
+        "Tuning validasi agar kesalahan input turun tanpa hambat kecepatan."
+      ],
+      "impact_goal": "Mempercepat maintenance data course harian minimal 35%.",
+      "definition_of_done": "Create/edit/delete course dapat dilakukan cepat tanpa modal berat.",
+      "rollout_phase": "P2",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "ACAD-11",
+      "category": "academic_load",
+      "type": "both",
+      "priority": "medium",
+      "title": "Academic goal tracking (GPA + credit progress)",
+      "description": "Extend target GPA card into full goal module: target GPA, current GPA, completed credits, remaining credits, and projected graduation timeline. Add milestone indicators and warnings when current performance deviates from target trajectory.",
+      "dependencies": [
+        "ACAD-01",
+        "SETUP-02"
+      ],
+      "execution_steps": [
+        "Rilis modul tujuan akademik: target GPA + progress kredit.",
+        "Tambahkan milestone otomatis (mis. 25%, 50%, 75%).",
+        "Aktifkan alert deviasi jika proyeksi GPA meleset dari target."
+      ],
+      "impact_goal": "Meningkatkan visibilitas target akademik jangka menengah pengguna.",
+      "definition_of_done": "User dapat melihat gap ke target dan langkah koreksi terdekat.",
+      "rollout_phase": "P2",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "ACAD-12",
+      "category": "academic_load",
+      "type": "both",
+      "priority": "medium",
+      "title": "Import/export academic schedule data",
+      "description": "Enable CSV import for courses and schedule slots with mapping preview and validation errors per row. Add export to CSV/ICS for external calendar sync. Ensure duplicate detection by course name+semester and day+time combinations.",
+      "dependencies": [
+        "ACAD-01",
+        "ACAD-04"
+      ],
+      "execution_steps": [
+        "Rilis import CSV dengan preview mapping dan validasi error baris.",
+        "Tambahkan export CSV/ICS untuk sinkronisasi eksternal.",
+        "Tambahkan duplicate guard berbasis key akademik utama."
+      ],
+      "impact_goal": "Mempermudah migrasi data akademik awal dan integrasi kalender.",
+      "definition_of_done": "Import 100+ baris tetap stabil dan error per baris jelas.",
+      "rollout_phase": "P2",
+      "measurement_window": "7-14 days after release"
+    },
+    {
+      "id": "ACAD-13",
+      "category": "academic_load",
+      "type": "both",
+      "priority": "critical",
+      "title": "Hardening UX states for Academic Load tab",
+      "description": "Standardize loading, empty, error, and success feedback across course list, schedule grid, and summary cards. Provide actionable error messages (no raw backend text), retry actions, skeleton loaders, and mobile parity so all Academic Load actions work equally on small screens.",
+      "dependencies": [
+        "ACAD-01",
+        "ACAD-05"
+      ],
+      "execution_steps": [
+        "Definisikan komponen state standar untuk tab Academic Load.",
+        "Pasang skeleton/loading/error/empty di semua panel utama.",
+        "Pastikan parity mobile-desktop untuk aksi inti."
+      ],
+      "impact_goal": "Mengurangi drop-off pengguna saat mengalami error/no data.",
+      "definition_of_done": "Semua aksi Academic Load punya feedback status dan recovery path.",
+      "rollout_phase": "P0",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
       "id": "BURN-01",
       "category": "burnout",
       "type": "both",
@@ -427,6 +774,181 @@
         "BURN-02",
         "BURN-03"
       ],
+      "mark": "done"
+    },
+    {
+      "id": "BURN-05",
+      "category": "burnout",
+      "type": "both",
+      "priority": "critical",
+      "title": "Personalized burnout risk model calibration",
+      "description": "Move from fixed formula to calibrated user-specific model using historical patterns (task completion delay, overdue streak, late-night study frequency, credit load, self-reported stress). Store weighted factors in burnout_model_weights and recompute risk score nightly. Provide explainable factor breakdown so users understand why risk is high.",
+      "dependencies": [
+        "BURN-01",
+        "BURN-02"
+      ],
+      "execution_steps": [
+        "Mulai dari model rule-based personalizable (weight editable internal).",
+        "Tambahkan explainability panel faktor risiko utama.",
+        "Kalibrasi otomatis mingguan dari outcome aktual user."
+      ],
+      "impact_goal": "Meningkatkan akurasi prediksi burnout agar intervensi lebih tepat waktu.",
+      "definition_of_done": "Risk score memiliki alasan yang jelas dan konsisten lintas sesi.",
+      "rollout_phase": "P0",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "BURN-06",
+      "category": "burnout",
+      "type": "both",
+      "priority": "high",
+      "title": "Early warning alerts with prevention playbooks",
+      "description": "When risk crosses thresholds (moderate/high/critical), trigger contextual prevention cards and notifications: reschedule tasks, reduce non-urgent load, suggest break blocks, and recommend contacting support resources. Ensure alerts are throttled to avoid spam and include 'why this alert' explanation.",
+      "dependencies": [
+        "BURN-01",
+        "NOTIF-02"
+      ],
+      "execution_steps": [
+        "Definisikan threshold alert + anti-spam cooldown.",
+        "Tampilkan playbook aksi cepat sesuai level risiko.",
+        "Uji efektivitas alert berdasarkan action taken rate."
+      ],
+      "impact_goal": "Mendorong tindakan pencegahan lebih dini sebelum risiko memburuk.",
+      "definition_of_done": "Alert penting terbaca dan menghasilkan aksi user terukur.",
+      "rollout_phase": "P1",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "BURN-07",
+      "category": "burnout",
+      "type": "both",
+      "priority": "high",
+      "title": "Recovery plan generator tied to task calendar",
+      "description": "Add one-click 'Generate Recovery Plan' that creates a 3–7 day low-friction plan: protected rest windows, reduced workload quotas, and high-impact task picks. Sync generated plan to My Tasks and schedule grid with explicit before/after load comparison metrics.",
+      "dependencies": [
+        "BURN-04",
+        "TASKS-12",
+        "ACAD-09"
+      ],
+      "execution_steps": [
+        "Generate recovery plan ringan 3 hari sebagai MVP.",
+        "Sinkronkan plan ke My Tasks + kalender otomatis.",
+        "Tambahkan evaluasi dampak plan pada risk trend 7 hari."
+      ],
+      "impact_goal": "Menurunkan risiko burnout tinggi dalam 1 minggu pertama intervensi.",
+      "definition_of_done": "Recovery plan bisa di-generate, diterapkan, dan diukur dampaknya.",
+      "rollout_phase": "P1",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "BURN-08",
+      "category": "burnout",
+      "type": "both",
+      "priority": "medium",
+      "title": "Mood and energy daily check-in",
+      "description": "Introduce lightweight daily check-in (mood, energy, sleep hours, focus quality) with optional notes. Persist in burnout_checkins and blend with workload metrics to improve risk prediction. Show trend correlation (e.g., low sleep + high overdue => higher burnout likelihood).",
+      "dependencies": [
+        "BURN-02"
+      ],
+      "execution_steps": [
+        "Tambahkan check-in harian 10 detik (mood/energi/tidur).",
+        "Integrasikan data check-in ke perhitungan risiko.",
+        "Tampilkan insight korelasi sederhana yang mudah dipahami."
+      ],
+      "impact_goal": "Menambah sinyal wellbeing agar rekomendasi burnout lebih kontekstual.",
+      "definition_of_done": "Check-in completion rate harian mencapai target adopsi awal.",
+      "rollout_phase": "P2",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "BURN-09",
+      "category": "burnout",
+      "type": "both",
+      "priority": "medium",
+      "title": "Intervention effectiveness tracking",
+      "description": "Track whether recommendations are accepted and whether they reduce risk over 3/7/14 days. Create intervention_events table (recommendation_id, accepted, completed, outcome_score). Use this feedback loop to rank future recommendations by observed effectiveness per user.",
+      "dependencies": [
+        "BURN-06",
+        "BURN-07"
+      ],
+      "execution_steps": [
+        "Log acceptance dan completion setiap intervensi.",
+        "Hitung skor efektivitas 3/7/14 hari otomatis.",
+        "Ranking rekomendasi berdasarkan hasil aktual user."
+      ],
+      "impact_goal": "Meningkatkan kualitas rekomendasi burnout dari waktu ke waktu.",
+      "definition_of_done": "Sistem dapat menunjukkan intervensi mana paling efektif per user.",
+      "rollout_phase": "P2",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "BURN-10",
+      "category": "burnout",
+      "type": "frontend",
+      "priority": "medium",
+      "title": "Burnout dashboard UX hardening and clarity",
+      "description": "Refactor Burnout tab information hierarchy: top risk status, then causes, then concrete actions. Add explicit loading/empty/error states, confidence indicator for risk score, and clearer legends for charts/progress bars. Ensure no vague labels and no hidden critical actions on mobile.",
+      "dependencies": [
+        "BURN-01",
+        "BURN-03"
+      ],
+      "execution_steps": [
+        "Rapikan hierarchy: status risiko -> penyebab -> aksi.",
+        "Tambahkan confidence indicator dan legend visual jelas.",
+        "Perbaiki UX mobile agar aksi kritis tetap terlihat."
+      ],
+      "impact_goal": "Meningkatkan pemahaman user terhadap kondisi burnout mereka.",
+      "definition_of_done": "User dapat menjawab apa risikonya dan harus ngapain sekarang dalam <10 detik.",
+      "rollout_phase": "P2",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "BURN-11",
+      "category": "burnout",
+      "type": "both",
+      "priority": "high",
+      "title": "Privacy-safe support escalation workflow",
+      "description": "For critical sustained risk, provide opt-in escalation flow to trusted contact/mentor/counselor template message (never auto-send). Add consent logging, redaction controls, and clear privacy boundaries so users control what data is shared.",
+      "dependencies": [
+        "BURN-06"
+      ],
+      "execution_steps": [
+        "Implement opt-in escalation flow dengan consent eksplisit.",
+        "Tambahkan template pesan dengan redaksi data sensitif.",
+        "Simpan audit consent dan akses histori berbagi data."
+      ],
+      "impact_goal": "Menyediakan jalur bantuan aman saat risiko kritis berulang.",
+      "definition_of_done": "Tidak ada data dibagikan tanpa persetujuan pengguna yang terekam.",
+      "rollout_phase": "P1",
+      "measurement_window": "7-14 days after release",
+      "mark": "done"
+    },
+    {
+      "id": "BURN-12",
+      "category": "burnout",
+      "type": "both",
+      "priority": "critical",
+      "title": "Reliability and observability for burnout pipeline",
+      "description": "Instrument burnout computations, snapshot jobs, and report generation with structured telemetry and failure alerts. Add idempotency keys for scheduled jobs, retry strategy for edge calls, and admin diagnostics for stale/no-data states. Guarantee consistent score computation across client and server.",
+      "dependencies": [
+        "BURN-02",
+        "BURN-04"
+      ],
+      "execution_steps": [
+        "Tambahkan telemetry terstruktur di pipeline burnout.",
+        "Implement retry + idempotency untuk job/scheduled function.",
+        "Buat dashboard diagnostik untuk stale/no-data incident."
+      ],
+      "impact_goal": "Menurunkan kegagalan pipeline burnout dan meningkatkan kepercayaan fitur.",
+      "definition_of_done": "Pipeline burnout stabil, terpantau, dan mudah ditindak saat gagal.",
+      "rollout_phase": "P0",
+      "measurement_window": "7-14 days after release",
       "mark": "done"
     },
     {
@@ -647,7 +1169,8 @@
       "description": "Add a '+' icon button to the Study Hours stat card on /dashboard. Clicking opens a small modal: Course (dropdown from user's courses, or 'No course'), Duration (hours + minutes pickers), Date (defaults to today, can backfill). On submit, call supabase.from('study_logs').insert({ user_id: uid, course_id, duration_minutes, logged_date }). The streak trigger fires automatically. Re-fetch study hours stat and streak after insert. Show success toast.",
       "dependencies": [
         "STREAK-01"
-      ]
+      ],
+      "mark": "done"
     },
     {
       "id": "SESSION-01",
@@ -671,7 +1194,8 @@
       "description": "Clicking an empty date cell in the /dashboard calendar opens a popover form positioned near the clicked cell. Form fields: Title (required), Time (time input, optional), Location (text input, optional), Type (dropdown: exam/homework/lab/seminar/other), Course (dropdown from user's courses, optional). On submit, call supabase.from('calendar_events').insert({ user_id: uid, title, event_date: clickedDate, event_time, location, type, course_id }). The new event chip appears on the calendar cell immediately via optimistic update.",
       "dependencies": [
         "DASH-04"
-      ]
+      ],
+      "mark": "done"
     },
     {
       "id": "CAL-02",
@@ -682,7 +1206,8 @@
       "description": "Clicking an existing event chip on the calendar opens a small popover showing: event title, time, location, and a Delete button. On delete click, show inline confirmation. On confirm, call supabase.from('calendar_events').delete().eq('id', eventId).eq('user_id', uid). Remove the chip from the calendar cell via optimistic state update.",
       "dependencies": [
         "CAL-01"
-      ]
+      ],
+      "mark": "done"
     },
     {
       "id": "EDGE-01",
@@ -693,7 +1218,8 @@
       "description": "Create /supabase/functions/burnout-report/index.ts using Deno. It receives POST { userId } with a Bearer token (JWT). Verify the JWT. Then use the service_role key to fetch: tasks (active), burnout_snapshots (last 7 days), courses, and profiles.daily_study_goal_hours. Build a structured prompt and call the openAI API. System prompt instructs OpenAI to return ONLY JSON. Parse response into { summary: string, riskLevel: 'LOW'|'MODERATE'|'HIGH'|'CRITICAL', recommendations: string[] }. Return this JSON. Store ANTHROPIC_API_KEY in Supabase Vault. Deploy with: supabase functions deploy burnout-report.",
       "dependencies": [
         "BURN-04"
-      ]
+      ],
+      "mark": "done"
     },
     {
       "id": "EDGE-02",
@@ -704,7 +1230,8 @@
       "description": "Create /supabase/functions/estimate-deadlines/index.ts. Receives POST { tasks: [{id, title, priority, status}], today: string }. Calls OpenAI API with the task list in the prompt, asking for realistic due date suggestions for tasks without due dates. System prompt instructs JSON-only response: { estimates: [{ id, suggested_date: 'YYYY-MM-DD', reasoning: string }] }. Frontend displays each suggestion with checkbox in a review modal. User accepts/rejects. Deploy alongside burnout-report.",
       "dependencies": [
         "TASKS-06"
-      ]
+      ],
+      "mark": "done"
     }
   ]
 }

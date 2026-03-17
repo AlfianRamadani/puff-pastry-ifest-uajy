@@ -54,6 +54,46 @@ Table tasks {
   updated_at timestamptz
 }
 
+Table schedule_load_metrics {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  week_start date [not null]
+  peak_blocks int
+  avg_daily_load decimal
+  overload_windows json [note: "Array of overloaded day-time windows"]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz
+}
+
+Table task_breakdowns {
+  id uuid [pk, default: `gen_random_uuid()`]
+  task_id uuid [not null, ref: > tasks.id, note: "parent task for AI breakdown"]
+  user_id uuid [not null, ref: > profiles.id]
+  source_model varchar [not null, note: "OpenAI model used for generation"]
+  input_context jsonb [note: "description + params used to generate breakdown"]
+  objective text [not null]
+  assumptions jsonb [note: "array of assumptions"]
+  estimated_total_hours decimal [note: "estimated completion hours"]
+  risk_level varchar [note: "low | medium | high"]
+  confidence decimal [note: "0.0 - 1.0"]
+  follow_up_questions jsonb [note: "array of clarifying questions"]
+  created_at timestamptz [default: `now()`]
+}
+
+Table task_breakdown_steps {
+  id uuid [pk, default: `gen_random_uuid()`]
+  task_breakdown_id uuid [not null, ref: > task_breakdowns.id]
+  order_index int [not null]
+  title varchar [not null]
+  details text
+  estimated_minutes int [default: 30]
+  acceptance_criteria text
+  status varchar [note: "pending | done"]
+  progress int [note: "0 - 100"]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz
+}
+
 Table study_logs {
   id uuid [pk, default: `gen_random_uuid()`]
   user_id uuid [not null, ref: > profiles.id]
@@ -81,6 +121,78 @@ Table burnout_snapshots {
   active_tasks_count int
   snapshot_date date [not null]
   created_at timestamptz [default: `now()`]
+}
+
+Table burnout_checkins {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  checkin_date date [not null]
+  mood int [note: "1 - 5"]
+  energy int [note: "1 - 5"]
+  sleep_hours decimal [note: "0.0 - 24.0"]
+  focus_quality int [note: "1 - 5"]
+  notes text
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz
+}
+
+Table intervention_events {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  recommendation_key varchar [not null]
+  recommendation_text text [not null]
+  status varchar [note: "suggested | accepted | completed"]
+  accepted_at timestamptz
+  completed_at timestamptz
+  outcome_3d decimal
+  outcome_7d decimal
+  outcome_14d decimal
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz
+}
+
+Table support_escalation_consents {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  contact_channel varchar
+  contact_destination varchar
+  share_summary boolean
+  share_recommendations boolean
+  message_preview text
+  consent_text text
+  created_at timestamptz [default: `now()`]
+}
+
+Table burnout_telemetry_events {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  event_type varchar
+  event_key varchar
+  payload json
+  created_at timestamptz [default: `now()`]
+}
+
+Table burnout_model_weights {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  active_task_weight decimal
+  overdue_task_weight decimal
+  credit_weight decimal
+  sleep_penalty_weight decimal
+  energy_penalty_weight decimal
+  mood_penalty_weight decimal
+  last_alert_at timestamptz
+  updated_at timestamptz
+}
+
+Table burnout_recovery_plans {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > profiles.id]
+  generated_at timestamptz [default: `now()`]
+  plan_days int
+  before_score decimal
+  after_score decimal
+  plan_payload json
 }
 
 Table calendar_events {
