@@ -15,9 +15,18 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && user) {
-      router.replace("/dashboard");
-    }
+    const routeIfAuthenticated = async () => {
+      if (!loading && user) {
+        router.replace("/dashboard");
+        return;
+      }
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        router.replace("/dashboard");
+      }
+    };
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void routeIfAuthenticated();
   }, [loading, router, user]);
 
   const handleMagicLink = async (event: FormEvent) => {

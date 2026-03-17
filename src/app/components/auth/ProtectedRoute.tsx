@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -10,11 +11,16 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { loading, user } = useAuth();
 
   useEffect(() => {
-    if (loading) return;
-
-    if (!user) {
-      router.replace("/login");
-    }
+    const verifySession = async () => {
+      if (loading) return;
+      const { data } = await supabase.auth.getSession();
+      const hasSession = Boolean(data.session);
+      if (!user && !hasSession) {
+        router.replace("/login");
+      }
+    };
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void verifySession();
   }, [loading, router, user, pathname]);
 
   if (loading) {
