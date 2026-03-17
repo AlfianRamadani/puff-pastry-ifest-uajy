@@ -5,11 +5,12 @@ interface TopNavProps {
     breadcrumb: string[];
     activeNote: Note | null;
     onDeleteNote: (id: string) => void;
+    onShareNote: () => void;
     onToggleSidebar: () => void;
     sidebarOpen: boolean;
 }
 
-export default function TopNav({ breadcrumb, activeNote, onDeleteNote, onToggleSidebar, sidebarOpen }: TopNavProps) {
+export default function TopNav({ breadcrumb, activeNote, onDeleteNote, onShareNote, onToggleSidebar, sidebarOpen }: TopNavProps) {
     return (
         <header className="flex items-center justify-between px-3 md:px-5 py-3 bg-[#FFC107] border-b-[3px] border-black shrink-0">
             {/* Breadcrumb */}
@@ -43,7 +44,11 @@ export default function TopNav({ breadcrumb, activeNote, onDeleteNote, onToggleS
                     </button>
                 )}
 
-                <button className="hidden md:flex items-center gap-1.5 px-3 h-8 bg-black text-white text-xs font-black uppercase border-[3px] border-black hover:bg-white hover:text-black transition-all shadow-[3px_3px_0px_rgba(0,0,0,0.3)] hover:shadow-[1px_1px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px]">
+                <button
+                    onClick={onShareNote}
+                    disabled={!activeNote}
+                    className="hidden md:flex items-center gap-1.5 px-3 h-8 bg-black text-white text-xs font-black uppercase border-[3px] border-black hover:bg-white hover:text-black transition-all shadow-[3px_3px_0px_rgba(0,0,0,0.3)] hover:shadow-[1px_1px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-black disabled:hover:text-white disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0px_rgba(0,0,0,0.3)]"
+                >
                     <Share2 size={12} strokeWidth={3} /> SHARE
                 </button>
 

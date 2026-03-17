@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Search, Bell, Sparkles, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const PAGE_TITLES: Record<string, { label: string; color: string }> = {
   '/': { label: 'DASHBOARD', color: 'bg-[#FFC107]' },
@@ -25,9 +26,12 @@ function getPageInfo(pathname: string) {
 const TopBar = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const { signOut } = useAuth();
   const page = getPageInfo(pathname);
 
   const [profileOpen, setProfileOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutSuccessOpen, setLogoutSuccessOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,6 +48,21 @@ const TopBar = () => {
       document.removeEventListener("keydown", handleKey);
     };
   }, []);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await signOut();
+      setProfileOpen(false);
+      setLogoutSuccessOpen(true);
+      window.setTimeout(() => {
+        setLogoutSuccessOpen(false);
+        router.push('/login');
+      }, 900);
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <nav className="w-full font-sans antialiased">
@@ -127,11 +146,12 @@ const TopBar = () => {
                   </Link>
                   <button
                     role="menuitem"
-                    onClick={() => { setProfileOpen(false); alert('Logged out'); }}
+                    onClick={() => { void handleLogout(); }}
+                    disabled={loggingOut}
                     className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-[#FF4444]/10 transition-colors"
                   >
                     <LogOut className="w-4 h-4 text-[#FF4444]" strokeWidth={2.5} />
-                    <span className="font-bold text-sm text-[#FF4444]">Log Out</span>
+                    <span className="font-bold text-sm text-[#FF4444]">{loggingOut ? 'Signing out...' : 'Log Out'}</span>
                   </button>
                 </div>
               </div>
@@ -175,6 +195,14 @@ const TopBar = () => {
           </div>
         </div>
       </div>
+
+      {logoutSuccessOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white border-[3px] border-black px-5 py-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <p className="font-black text-sm uppercase tracking-wide">Logout success</p>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

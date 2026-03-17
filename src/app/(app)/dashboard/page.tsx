@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, CheckCircle, Clock, Flame, TrendingUp, Calendar, Star, ArrowRight } from "lucide-react";
+import { BookOpen, CheckCircle, Clock, Flame, TrendingUp, Calendar, Star, ArrowRight, Plus, X } from "lucide-react";
 import { addDays, format, isTomorrow, parseISO, startOfWeek, getDayOfYear } from "date-fns";
 import CustomCalendar from "../../components/landing/Calendar";
 import { supabase } from "@/lib/supabase";
@@ -30,6 +30,11 @@ type CourseItem = {
   color: string | null;
 };
 
+type CourseOption = {
+  id: string;
+  name: string;
+};
+
 function getDueLabel(dueDate: string | null) {
   if (!dueDate) return "No due date";
   const parsed = parseISO(dueDate);
@@ -53,6 +58,15 @@ export default function Home() {
   const [courseCount, setCourseCount] = useState(0);
   const [upcoming, setUpcoming] = useState<UpcomingTask[]>([]);
   const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [courseOptions, setCourseOptions] = useState<CourseOption[]>([]);
+  const [showStudyLogModal, setShowStudyLogModal] = useState(false);
+  const [studyCourseId, setStudyCourseId] = useState<string>("none");
+  const [studyHoursInput, setStudyHoursInput] = useState("1");
+  const [studyMinutesInput, setStudyMinutesInput] = useState("0");
+  const [studyDateInput, setStudyDateInput] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [savingStudyLog, setSavingStudyLog] = useState(false);
+  const [studyLogError, setStudyLogError] = useState<string | null>(null);
+  const [studyLogSuccess, setStudyLogSuccess] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     tasksDone: 0,
     studyHours: 0,
@@ -73,14 +87,7 @@ export default function Home() {
       const weekStartDate = format(weekStart, "yyyy-MM-dd");
       const weekEndDate = format(addDays(new Date(), 7), "yyyy-MM-dd");
 
-      const [
-        tasksDoneResult,
-        logsResult,
-        streakResult,
-        dueThisWeekResult,
-        upcomingResult,
-        coursesResult,
-      ] = await Promise.all([
+      const [tasksDoneResult, logsResult, streakResult, dueThisWeekResult, upcomingResult, coursesResult] = await Promise.all([
         supabase
           .from("tasks")
           .select("id", { count: "exact", head: true })
@@ -153,6 +160,12 @@ export default function Home() {
     void loadDashboard();
   }, [profile?.current_gpa, user]);
 
+  useEffect(() => {
+    if (!studyLogSuccess) return;
+    const timer = window.setTimeout(() => setStudyLogSuccess(null), 2200);
+    return () => window.clearTimeout(timer);
+  }, [studyLogSuccess]);
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
   const displayName = profile?.full_name ?? "Student";
@@ -178,6 +191,81 @@ export default function Home() {
     { label: "Streak", value: stats.streak, sub: "days", icon: Flame, bg: "bg-[#FFC107]" },
     { label: "GPA", value: stats.gpa, sub: "current", icon: TrendingUp, bg: "bg-[#FFB3C1]" },
   ];
+
+  const refreshStudySummary = async () => {
+    if (!user) return;
+    const weekStartDate = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
+    const [logsResult, streakResult] = await Promise.all([
+      supabase.from("study_logs").select("duration_minutes").eq("user_id", user.id).gte("logged_date", weekStartDate),
+      supabase.from("streaks").select("current_streak").eq("user_id", user.id).maybeSingle(),
+    ]);
+
+    if (logsResult.error || streakResult.error) {
+      setErrorMessage(logsResult.error?.message ?? streakResult.error?.message ?? "Failed to refresh study stats.");
+      return;
+    }
+
+    const totalStudyMinutes = (logsResult.data ?? []).reduce((sum, item) => sum + (item.duration_minutes ?? 0), 0);
+    setStats((prev) => ({
+      ...prev,
+      studyHours: Number((totalStudyMinutes / 60).toFixed(1)),
+      streak: streakResult.data?.current_streak ?? prev.streak,
+    }));
+  };
+
+  const openStudyLogModal = async () => {
+    if (!user) return;
+    setStudyLogError(null);
+    setStudyCourseId("none");
+    setStudyHoursInput("1");
+    setStudyMinutesInput("0");
+    setStudyDateInput(format(new Date(), "yyyy-MM-dd"));
+
+    const { data, error } = await supabase
+      .from("courses")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .order("name", { ascending: true });
+
+    if (error) {
+      setStudyLogError(error.message);
+      return;
+    }
+
+    setCourseOptions(data ?? []);
+    setShowStudyLogModal(true);
+  };
+
+  const handleManualStudyLog = async () => {
+    if (!user) return;
+    const parsedHours = Number(studyHoursInput);
+    const parsedMinutes = Number(studyMinutesInput);
+    const totalMinutes = Math.max(0, parsedHours) * 60 + Math.max(0, parsedMinutes);
+
+    if (Number.isNaN(totalMinutes) || totalMinutes <= 0) {
+      setStudyLogError("Duration must be more than 0 minutes.");
+      return;
+    }
+
+    setSavingStudyLog(true);
+    setStudyLogError(null);
+    const { error } = await supabase.from("study_logs").insert({
+      user_id: user.id,
+      course_id: studyCourseId === "none" ? null : studyCourseId,
+      duration_minutes: totalMinutes,
+      logged_date: studyDateInput,
+    });
+
+    setSavingStudyLog(false);
+    if (error) {
+      setStudyLogError(error.message);
+      return;
+    }
+
+    setShowStudyLogModal(false);
+    setStudyLogSuccess("Study log added.");
+    await refreshStudySummary();
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-20 md:pb-10">
@@ -211,9 +299,21 @@ export default function Home() {
       <div data-tour="dashboard-stats" className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {statItems.map((stat) => (
           <div key={stat.label} className={`${stat.bg} border-[2px] sm:border-[3px] border-black p-3 sm:p-4 lg:p-5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
-            <div className="flex items-start gap-1.5 sm:gap-2 mb-2">
-              <stat.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black shrink-0 mt-0.5" strokeWidth={2.5} />
-              <span className="font-black text-[10px] sm:text-xs text-black uppercase tracking-wide leading-tight break-words">{stat.label}</span>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex items-start gap-1.5 sm:gap-2 min-w-0">
+                <stat.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black shrink-0 mt-0.5" strokeWidth={2.5} />
+                <span className="font-black text-[10px] sm:text-xs text-black uppercase tracking-wide leading-tight break-words">{stat.label}</span>
+              </div>
+              {stat.label === "Study Hours" && (
+                <button
+                  type="button"
+                  onClick={() => void openStudyLogModal()}
+                  className="p-1.5 bg-white border-2 border-black shrink-0 hover:bg-[#FFC107] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-black"
+                  aria-label="Add manual study log"
+                >
+                  <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-black" strokeWidth={3} />
+                </button>
+              )}
             </div>
             <p className="font-black text-2xl sm:text-3xl lg:text-4xl text-black leading-none">{statsLoading ? "..." : stat.value}</p>
             <p className="font-bold text-[10px] sm:text-xs text-black/50 uppercase mt-1">{stat.sub}</p>
@@ -309,6 +409,100 @@ export default function Home() {
         </p>
         <p className="font-bold text-xs sm:text-sm text-white/70 mt-1 sm:mt-2">- {dailyQuote.author}</p>
       </div>
+
+      {showStudyLogModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 p-4 flex items-center justify-center">
+          <div className="w-full max-w-md bg-white border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <div className="p-4 border-b-[3px] border-black bg-[#B3D4FF] flex items-center justify-between">
+              <h3 className="font-black text-sm uppercase tracking-wide">Add Study Log</h3>
+              <button
+                type="button"
+                onClick={() => setShowStudyLogModal(false)}
+                className="p-1 border-2 border-black bg-white"
+                aria-label="Close study log modal"
+              >
+                <X className="w-4 h-4" strokeWidth={3} />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {studyLogError && (
+                <div className="border-[2px] border-black bg-[#FFB3C1] px-3 py-2">
+                  <p className="font-black text-[11px] uppercase tracking-wide">{studyLogError}</p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[11px] font-black uppercase mb-1">Course</label>
+                <select
+                  value={studyCourseId}
+                  onChange={(event) => setStudyCourseId(event.target.value)}
+                  className="w-full border-[2px] border-black p-2 font-bold text-sm"
+                >
+                  <option value="none">No course</option>
+                  {courseOptions.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-black uppercase mb-1">Hours</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={24}
+                    value={studyHoursInput}
+                    onChange={(event) => setStudyHoursInput(event.target.value)}
+                    className="w-full border-[2px] border-black p-2 font-bold text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase mb-1">Minutes</label>
+                  <select
+                    value={studyMinutesInput}
+                    onChange={(event) => setStudyMinutesInput(event.target.value)}
+                    className="w-full border-[2px] border-black p-2 font-bold text-sm"
+                  >
+                    <option value="0">00</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase mb-1">Date</label>
+                <input
+                  type="date"
+                  value={studyDateInput}
+                  onChange={(event) => setStudyDateInput(event.target.value)}
+                  className="w-full border-[2px] border-black p-2 font-bold text-sm"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void handleManualStudyLog()}
+                disabled={savingStudyLog}
+                className="w-full py-2.5 bg-[#FFC107] border-[3px] border-black font-black text-xs uppercase tracking-wide disabled:opacity-70"
+              >
+                {savingStudyLog ? "Saving..." : "Save Study Log"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {studyLogSuccess && (
+        <div className="fixed bottom-4 right-4 z-[60] bg-[#B3FFB3] border-[3px] border-black px-4 py-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <p className="font-black text-xs uppercase tracking-wide">{studyLogSuccess}</p>
+        </div>
+      )}
     </div>
   );
 }

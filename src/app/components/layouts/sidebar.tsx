@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Home, Users, CheckSquare, PenLine, ChevronDown, Zap, Settings, Sparkles, LogOut } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -24,8 +24,11 @@ const TOUR_KEY = "puff_pastry_tour_completed";
 
 const Sidebar = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { profile, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutSuccessOpen, setLogoutSuccessOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const displayName = profile?.full_name || profile?.email || "Student";
   const initial = displayName.charAt(0).toUpperCase();
@@ -40,6 +43,20 @@ const Sidebar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await signOut();
+      setLogoutSuccessOpen(true);
+      window.setTimeout(() => {
+        setLogoutSuccessOpen(false);
+        router.push('/login');
+      }, 900);
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <>
@@ -148,12 +165,13 @@ const Sidebar = () => {
                   type="button"
                   onClick={() => {
                     setMenuOpen(false);
-                    void signOut();
+                    void handleLogout();
                   }}
+                  disabled={loggingOut}
                   className="w-full flex items-center gap-2 px-3 py-2 font-black text-xs uppercase tracking-wide text-black hover:bg-[#FFB3C1]"
                 >
                   <LogOut className="w-3.5 h-3.5" strokeWidth={2.5} />
-                  Sign Out
+                  {loggingOut ? 'Signing out...' : 'Sign Out'}
                 </button>
               </div>
             )}
@@ -170,6 +188,14 @@ const Sidebar = () => {
           </button>
         </div>
       </div>
+
+      {logoutSuccessOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white border-[3px] border-black px-5 py-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <p className="font-black text-sm uppercase tracking-wide">Logout success</p>
+          </div>
+        </div>
+      )}
     </>
   );
 };

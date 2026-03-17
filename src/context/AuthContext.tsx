@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
@@ -56,7 +55,6 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -226,8 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setUser(null);
     setProfile(null);
-    router.push("/");
-  }, [router]);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
